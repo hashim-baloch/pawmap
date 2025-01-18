@@ -1,11 +1,16 @@
 import { useRef, useState, useCallback } from "react";
-import { MapContainer, TileLayer, FeatureGroup } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  FeatureGroup,
+  ZoomControl,
+} from "react-leaflet";
 import L from "leaflet";
 import DrawControls from "./DrawControls";
-import MapControls from "./MapControls";
+// import MapControls from "./MapControls";
 import Dialog from "./Dialog";
 import "leaflet/dist/leaflet.css";
-
+import "./Map.css";
 // Fix Leaflet default marker icon issue
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
@@ -86,86 +91,101 @@ function Map() {
     }
   }, []);
 
-  const saveMap = useCallback(() => {
-    const data = mapLayers.map((layer) => {
-      const geoJSON = layer.toGeoJSON();
-      if (layer instanceof L.Circle) {
-        geoJSON.properties = {
-          ...geoJSON.properties,
-          radius: layer.getRadius(),
-          type: "circle",
-        };
-      }
-      if (layer.label) {
-        geoJSON.properties = {
-          ...geoJSON.properties,
-          labelContent: layer.label.getIcon().options.html,
-        };
-      }
-      return geoJSON;
-    });
-    localStorage.setItem("mapData", JSON.stringify(data));
-    alert("Map data saved successfully!");
-  }, [mapLayers]);
+  // const saveMap = useCallback(() => {
+  //   const data = mapLayers.map((layer) => {
+  //     const geoJSON = layer.toGeoJSON();
+  //     if (layer instanceof L.Circle) {
+  //       geoJSON.properties = {
+  //         ...geoJSON.properties,
+  //         radius: layer.getRadius(),
+  //         type: "circle",
+  //       };
+  //     }
+  //     if (layer.label) {
+  //       geoJSON.properties = {
+  //         ...geoJSON.properties,
+  //         labelContent: layer.label.getIcon().options.html,
+  //       };
+  //     }
+  //     return geoJSON;
+  //   });
+  //   localStorage.setItem("mapData", JSON.stringify(data));
+  //   alert("Map data saved successfully!");
+  // }, [mapLayers]);
 
-  const loadMap = useCallback(() => {
-    try {
-      const savedData = localStorage.getItem("mapData");
-      if (!savedData) {
-        alert("No saved map data found");
-        return;
-      }
+  // const loadMap = useCallback(() => {
+  //   try {
+  //     const savedData = localStorage.getItem("mapData");
+  //     if (!savedData) {
+  //       alert("No saved map data found");
+  //       return;
+  //     }
 
-      const data = JSON.parse(savedData);
-      if (featureGroupRef.current) {
-        featureGroupRef.current.clearLayers();
+  //     const data = JSON.parse(savedData);
+  //     if (featureGroupRef.current) {
+  //       featureGroupRef.current.clearLayers();
 
-        data.forEach((item) => {
-          let layer;
-          if (item.properties && item.properties.type === "circle") {
-            const coords = item.geometry.coordinates;
-            layer = L.circle([coords[1], coords[0]], {
-              radius: item.properties.radius,
-            });
-          } else {
-            layer = L.geoJSON(item);
-            layer = layer.getLayers()[0];
-          }
+  //       data.forEach((item) => {
+  //         let layer;
+  //         if (item.properties && item.properties.type === "circle") {
+  //           const coords = item.geometry.coordinates;
+  //           layer = L.circle([coords[1], coords[0]], {
+  //             radius: item.properties.radius,
+  //           });
+  //         } else {
+  //           layer = L.geoJSON(item);
+  //           layer = layer.getLayers()[0];
+  //         }
 
-          featureGroupRef.current.addLayer(layer);
+  //         featureGroupRef.current.addLayer(layer);
 
-          if (item.properties && item.properties.labelContent) {
-            const label = createLabel(layer, item.properties.labelContent);
-            layer.label = label;
-            featureGroupRef.current.addLayer(label);
-          }
-        });
+  //         if (item.properties && item.properties.labelContent) {
+  //           const label = createLabel(layer, item.properties.labelContent);
+  //           layer.label = label;
+  //           featureGroupRef.current.addLayer(label);
+  //         }
+  //       });
 
-        setMapLayers(featureGroupRef.current.getLayers());
-        alert("Map data loaded successfully!");
-      }
-    } catch (error) {
-      console.error("Error loading map data:", error);
-      alert("Error loading map data");
-    }
-  }, []);
+  //       setMapLayers(featureGroupRef.current.getLayers());
+  //       alert("Map data loaded successfully!");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error loading map data:", error);
+  //     alert("Error loading map data");
+  //   }
+  // }, []);
 
   return (
     <div className="map-wrapper">
-      <MapControls onSave={saveMap} onLoad={loadMap} />
+      {/* <MapControls onSave={saveMap} onLoad={loadMap} /> */}
       <MapContainer
         center={[51.505, -0.09]}
-        zoom={13}
-        style={{ height: "600px", width: "100%" }}
+        zoom={2}
+        minZoom={2}
+        style={{ height: "100vh", width: "100vw" }}
         ref={setMap}
+        maxBounds={[
+          [-90, -180], // Southwest corner of the bounding box
+          [90, 180], // Northeast corner of the bounding box
+        ]}
+        zoomControl={false} // Disable default zoom control
       >
         <TileLayer
           url="https://tile.openstreetmap.de/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        <FeatureGroup ref={featureGroupRef}>
+        <ZoomControl position="bottomright" /> {/* Add custom ZoomControl */}
+        <FeatureGroup ref={featureGroupRef} position="bottomright">
           {map && (
             <DrawControls
+              style={{
+                position: "absolute !important",
+                bottom: "10px !important",
+                left: " 10px !important",
+                zIndex: " 1000 !important",
+              }}
+              // position="bottomleft" //not working
+              // class="controls"  //not working
               map={map}
               featureGroupRef={featureGroupRef}
               onLayerCreated={handleLayerCreated}
