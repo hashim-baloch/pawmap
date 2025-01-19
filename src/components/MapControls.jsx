@@ -1,4 +1,4 @@
-import React from "react";
+import PropTypes from "prop-types";
 
 function MapControls({ onSave, onLoad }) {
   return (
@@ -10,5 +10,10 @@ function MapControls({ onSave, onLoad }) {
     </div>
   );
 }
+
+MapControls.propTypes = {
+  onSave: PropTypes.func.isRequired,
+  onLoad: PropTypes.func.isRequired,
+};
 
 export default MapControls;

@@ -169,45 +169,18 @@ function Dialog({ onSubmit, onClose, initialInfo = "", sightings = [] }) {
         );
       case 3:
         return (
-          <>
-            <h3>Location Information</h3>
-            <div className="location-instructions">
-              <h4>How to Add Locations</h4>
-              <p>
-                Click on the map to mark locations where you&apos;ve seen this
-                animal. Add at least 3 points to create an area.
-              </p>
-            </div>
-            <div className="sightings-list">
-              <div className="sightings-count">
-                Sightings added: {animalInfo.sightings.length}
-              </div>
-              {animalInfo.sightings.map((sight, index) => (
-                <div key={index} className="sighting-item">
-                  <span>Sighting {index + 1}: </span>
-                  <span>{new Date(sight.date).toLocaleDateString()}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAnimalInfo((prev) => ({
-                        ...prev,
-                        sightings: prev.sightings.filter((_, i) => i !== index),
-                      }));
-                    }}
-                    className="remove-sighting"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          </>
+          <div className="sightings-count">
+            Sightings added: {animalInfo.sightings.length}
+            {animalInfo.sightings.length < 3 && " (minimum 3 required)"}
+          </div>
         );
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="dialog-overlay">
+    <div className={`dialog-overlay ${step === 3 ? "location-step" : ""}`}>
       <div className={`dialog ${step === 3 ? "location-step" : ""}`}>
         <form onSubmit={handleSubmit}>
           {renderStep()}

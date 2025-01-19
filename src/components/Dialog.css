@@ -145,3 +145,43 @@
   color: #333;
   font-size: 14px;
 }
+.dialog-overlay.location-step {
+  pointer-events: none;
+  background-color: transparent;
+  padding: 0;
+}
+
+.dialog.location-step {
+  pointer-events: auto;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 0;
+  padding: 15px 20px;
+  width: 100%;
+  max-width: 100%;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dialog.location-step form {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dialog.location-step .sightings-count {
+  margin: 0;
+  font-weight: 500;
+  color: #666;
+}
+
+.dialog.location-step .dialog-buttons {
+  margin: 0;
+  gap: 8px;
+}

@@ -13,6 +13,13 @@ import "leaflet-draw/dist/leaflet.draw.css";
 import "leaflet-draw";
 import Dialog from "./Dialog";
 import SearchBox from "./SearchBox";
+import {
+  filterSightingsWithinRange,
+  calculateCenter,
+  calculateAdjustedRadius,
+  calculateDistance,
+  MAX_ROAMING_RANGES,
+} from "../utils/animalRangeUtils";
 import "./Map.css";
 
 const customMarkerIcons = {
@@ -136,60 +143,51 @@ function Map() {
     [handleLayerClick]
   );
 
-  const calculateAreaCenter = (sightings) => {
-    if (sightings.length === 0) return null;
-
-    const lats = sightings.map((s) => s.lat);
-    const lngs = sightings.map((s) => s.lng);
-
-    const centerLat = (Math.max(...lats) + Math.min(...lats)) / 2;
-    const centerLng = (Math.max(...lngs) + Math.min(...lngs)) / 2;
-
-    return [centerLat, centerLng];
-  };
-
-  const createAreaPolygon = (sightings) => {
-    if (sightings.length < 3) return null;
-
-    const center = calculateAreaCenter(sightings);
-
-    // Calculate the maximum distance from center to any sighting
-    const radius = Math.max(
-      ...sightings.map((s) =>
-        L.latLng(center).distanceTo(L.latLng(s.lat, s.lng))
-      )
-    );
-
-    return L.circle(center, {
-      radius: radius * 1.2, // Add 20% buffer
-      color: "#4a80f5",
-      fillColor: "#4a80f5",
-      fillOpacity: 0.2,
-      weight: 2,
-    });
-  };
-
   const handleDialogSubmit = ({ info, markerType, sightings }) => {
     if (addingAnimal && sightings?.length >= 3) {
-      const center = calculateAreaCenter(sightings);
-      if (center) {
-        // Create area
-        const areaLayer = createAreaPolygon(sightings);
-        if (areaLayer) {
-          featureGroupRef.current.addLayer(areaLayer);
+      try {
+        const animalData = JSON.parse(info);
+        const validSightings = filterSightingsWithinRange(
+          sightings,
+          animalData.type
+        );
+
+        if (validSightings.length < 3) {
+          alert(
+            "Some sightings were too far apart for this type of animal. Please add sightings closer together."
+          );
+          return;
         }
 
-        // Create marker
-        const marker = L.marker(center, {
-          icon: customMarkerIcons[markerType],
-        });
-        marker.info = info;
-        bindPopupToLayer(marker, info);
-        featureGroupRef.current.addLayer(marker);
+        const centerPoint = calculateCenter(validSightings);
+        if (centerPoint) {
+          // Create area with adjusted radius
+          const areaLayer = L.circle([centerPoint.lat, centerPoint.lng], {
+            radius: calculateAdjustedRadius(validSightings, animalData.type),
+            color: "#4a80f5",
+            fillColor: "#4a80f5",
+            fillOpacity: 0.2,
+            weight: 2,
+          });
+          featureGroupRef.current.addLayer(areaLayer);
 
-        setMapLayers((prevLayers) => [...prevLayers, marker, areaLayer]);
+          // Create marker at center
+          const marker = L.marker([centerPoint.lat, centerPoint.lng], {
+            icon: customMarkerIcons[markerType],
+          });
+          marker.info = info;
+          bindPopupToLayer(marker, info);
+          featureGroupRef.current.addLayer(marker);
+
+          setMapLayers((prevLayers) => [...prevLayers, marker, areaLayer]);
+        }
+        setShowDialog(false);
+      } catch (error) {
+        console.error("Error processing animal data:", error);
+        alert(
+          "There was an error processing the animal data. Please try again."
+        );
       }
-      setShowDialog(false);
     } else if (activeLayer) {
       if (activeLayer instanceof L.Marker && !isEdit) {
         activeLayer.setIcon(customMarkerIcons[markerType]);
@@ -220,6 +218,56 @@ function Map() {
       return () => map.off("click", handleMapClick);
     }
   }, [map, addingAnimal]);
+
+  const isWithinRange = (newSighting, existingSightings, animalType) => {
+    if (existingSightings.length === 0) return true;
+
+    const maxRange = MAX_ROAMING_RANGES[animalType] || MAX_ROAMING_RANGES.other;
+    const center =
+      existingSightings.length > 0
+        ? calculateCenter(existingSightings)
+        : existingSightings[0];
+
+    const distance = calculateDistance(center, newSighting);
+    return distance <= maxRange;
+  };
+
+  useEffect(() => {
+    if (map && addingAnimal) {
+      const handleMapClick = (e) => {
+        const newSighting = {
+          lat: e.latlng.lat,
+          lng: e.latlng.lng,
+          date: new Date().toISOString().split("T")[0],
+        };
+
+        // Get the current animal type from the dialog
+        const currentAnimalType = JSON.parse(
+          activeLayer?.info || '{"type":"other"}'
+        ).type;
+
+        // Check if the new sighting is within range of existing sightings
+        if (
+          temporarySightings.length > 0 &&
+          !isWithinRange(newSighting, temporarySightings, currentAnimalType)
+        ) {
+          const maxRange =
+            MAX_ROAMING_RANGES[currentAnimalType] || MAX_ROAMING_RANGES.other;
+          alert(
+            `This location is too far from other sightings. Maximum range for ${currentAnimalType} is ${
+              maxRange / 1000
+            } km.`
+          );
+          return;
+        }
+
+        setTemporarySightings((prev) => [...prev, newSighting]);
+      };
+
+      map.on("click", handleMapClick);
+      return () => map.off("click", handleMapClick);
+    }
+  }, [map, addingAnimal, temporarySightings, activeLayer]);
 
   return (
     <div className="map-wrapper">
@@ -255,16 +303,11 @@ function Map() {
           ))}
           {temporarySightings.length >= 3 && (
             <Circle
-              center={calculateAreaCenter(temporarySightings)}
-              radius={
-                Math.max(
-                  ...temporarySightings.map((s) =>
-                    L.latLng(
-                      calculateAreaCenter(temporarySightings)
-                    ).distanceTo(L.latLng(s.lat, s.lng))
-                  )
-                ) * 1.2
-              }
+              center={calculateCenter(temporarySightings)}
+              radius={calculateAdjustedRadius(
+                temporarySightings,
+                JSON.parse(activeLayer?.info || '{"type":"other"}').type
+              )}
               pathOptions={{
                 color: "#4a80f5",
                 fillColor: "#4a80f5",
