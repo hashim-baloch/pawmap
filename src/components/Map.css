@@ -1,7 +1,12 @@
+@font-face {
+  font-family: "Caveat";
+  src: url("../assets/Caveat-VariableFont_wght.ttf") format("truetype");
+}
 .map-wrapper {
   position: relative;
   height: 100vh;
   width: 100vw;
+  font-family: Caveat;
 }
 
 .controls {
@@ -13,6 +18,8 @@
 
 .popup-content {
   padding: 10px;
+  width: 300px;
+  overflow: scroll;
 }
 
 .popup-content h4 {
@@ -56,21 +63,25 @@
 
 .add-animal-btn {
   position: absolute;
-  top: 20px;
-  left: 20px;
+  top: 25px;
+  right: 20px;
   z-index: 1000;
-  background-color: #4a80f5;
-  color: white;
+  background: #ff83d1;
+  border-radius: 30px;
+  color: #fff;
+  font-family: Caveat;
+  font-size: 22px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: normal;
   border: none;
   padding: 10px 20px;
-  border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
 }
 
 .add-animal-btn:hover {
-  background-color: #3a70e5;
+  background-color: #05616e;
 }
 
 .editing-notice {
@@ -104,23 +115,27 @@
 
 .search-container {
   position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 25px;
+  left: 20px;
   z-index: 1000;
-  width: 300px;
+  width: 370px;
 }
 
 .search-input {
   width: 100%;
   padding: 10px 16px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+  border-radius: 30px;
+  border: none;
+  font-family: "Caveat";
+  font-weight: 700;
+  font-size: 22px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   background: white;
 }
-
+.search-input:focus {
+  border: none;
+  outline: 2px solid #05616e;
+}
 .search-results {
   position: absolute;
   top: 100%;

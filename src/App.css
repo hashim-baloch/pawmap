@@ -12,6 +12,15 @@
   padding: 20px;
 }
 
+.logo {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  scale: 1.2;
+  transform: translateX(-50%);
+  z-index: 1000;
+}
+
 h1 {
   margin-bottom: 2rem;
   color: #333;
