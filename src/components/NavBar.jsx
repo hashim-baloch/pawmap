@@ -5,7 +5,7 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="logo">
-        <img src="/path-to-your-logo/logo.png" alt="Logo" className="logo-image" />
+        <img src="blob:https://www.figma.com/257a18cb-5289-464c-9bcb-a439c08682ed" alt="Logo" className="logo-image" />
         <span>PawMap</span>
       </div>
       <div className="search-bar">
@@ -16,7 +16,7 @@ const Navbar = () => {
         />
       </div>
       <div className="user-profile">
-        <img src="/path-to-profile-icon/profile.png" alt="Profile" className="profile-icon" />
+        <img src="blob:https://www.figma.com/c268c517-db40-4d38-a528-6d38d0fc4151" alt="Profile" className="profile-icon" />
       </div>
     </nav>
   );
