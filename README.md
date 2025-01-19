@@ -55,5 +55,3 @@ We welcome contributions from the community! If you'd like to contribute:
 ## License
 
 This project is licensed under the MIT License.
-
-> > > > > > > 55048895761497c73e844377b70fd79c531c43b2:README.md
