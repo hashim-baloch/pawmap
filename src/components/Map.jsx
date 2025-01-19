@@ -339,7 +339,48 @@ function Map() {
     [handleLayerClick]
   );
 
-  const handleDialogSubmit = ({
+  // Add fetchExistingData function
+  const fetchExistingData = async () => {
+    try {
+      const response = await fetch(
+        "https://localhost:5002/api/animals/get/all"
+      );
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const animals = await response.json();
+      animals.forEach((animal) => {
+        const marker = L.marker([animal.latitude, animal.longitude], {
+          icon: customMarkerIcons[animal.type] || customMarkerIcons.default,
+        });
+        marker.info = JSON.stringify(animal);
+        bindPopupToLayer(marker, marker.info);
+        featureGroupRef.current.addLayer(marker);
+
+        const areaLayer = L.circle([animal.latitude, animal.longitude], {
+          radius: animal.radius,
+          color: animal.color,
+          fillColor: animal.color,
+          fillOpacity: 0.2,
+          weight: 2,
+        });
+        featureGroupRef.current.addLayer(areaLayer);
+        setMapLayers((prev) => [...prev, marker, areaLayer]);
+      });
+    } catch (error) {
+      console.error("Error fetching existing data:", error);
+    }
+  };
+
+  // Call fetchExistingData in useEffect
+  useEffect(() => {
+    if (map) {
+      fetchExistingData();
+    }
+  }, [map]);
+
+  // Modify handleDialogSubmit to include POST request
+  const handleDialogSubmit = async ({
     info,
     markerType,
     sightings,
@@ -349,8 +390,8 @@ function Map() {
     if (addingAnimal && sightings?.length >= 3) {
       try {
         const animalData = JSON.parse(info);
-        animalData.images = images; // Add this line
-        animalData.videos = videos; // Add this line
+        animalData.images = images;
+        animalData.videos = videos;
         const validSightings = filterSightingsWithinRange(
           sightings,
           animalData.type
@@ -365,10 +406,7 @@ function Map() {
 
         const centerPoint = calculateCenter(validSightings);
         if (centerPoint) {
-          // Generate a random color for the circle
           const circleColor = getRandomColor();
-
-          // Create area with adjusted radius and random color
           const areaLayer = L.circle([centerPoint.lat, centerPoint.lng], {
             radius: calculateAdjustedRadius(validSightings, animalData.type),
             color: circleColor,
@@ -378,8 +416,7 @@ function Map() {
           });
           featureGroupRef.current.addLayer(areaLayer);
 
-          // Determine marker icon based on animal type
-          let animalMarkerIcon = customMarkerIcons.default; // Fallback
+          let animalMarkerIcon = customMarkerIcons.default;
           switch (animalData.type) {
             case "dog":
               animalMarkerIcon = customMarkerIcons.dog;
@@ -393,15 +430,54 @@ function Map() {
               break;
           }
 
-          // Create marker at center with specific icon
           const marker = L.marker([centerPoint.lat, centerPoint.lng], {
             icon: animalMarkerIcon,
           });
-          marker.info = JSON.stringify(animalData); // Update this line
+          marker.info = JSON.stringify(animalData);
           bindPopupToLayer(marker, marker.info);
           featureGroupRef.current.addLayer(marker);
 
           setMapLayers((prevLayers) => [...prevLayers, marker, areaLayer]);
+
+          // Send POST request to server
+          try {
+            const response = await fetch(
+              "https://your-server.com/api/animals",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  latitude: centerPoint.lat,
+                  longitude: centerPoint.lng,
+                  type: animalData.type,
+                  breed: animalData.breed,
+                  color: animalData.color,
+                  size: animalData.size,
+                  healthStatus: animalData.healthStatus,
+                  incidents: animalData.incidents,
+                  lastSeen: animalData.lastSeen,
+                  images: animalData.images,
+                  videos: animalData.videos,
+                  radius: calculateAdjustedRadius(
+                    validSightings,
+                    animalData.type
+                  ),
+                  color: circleColor,
+                }),
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error("Failed to save animal data");
+            }
+
+            const savedAnimal = await response.json();
+            console.log("Animal data saved:", savedAnimal);
+          } catch (postError) {
+            console.error("Error saving animal data:", postError);
+          }
         }
         setShowDialog(false);
       } catch (error) {
@@ -419,6 +495,28 @@ function Map() {
       if (!isEdit) {
         setMapLayers((prevLayers) => [...prevLayers, activeLayer]);
       }
+      try {
+        const response = await fetch(
+          `https://your-server.com/api/animals/${activeLayer.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: info,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to update animal data");
+        }
+
+        const updatedAnimal = await response.json();
+        console.log("Animal data updated:", updatedAnimal);
+      } catch (updateError) {
+        console.error("Error updating animal data:", updateError);
+      }
+
       setShowDialog(false);
     }
     setAddingAnimal(false);
