@@ -2,8 +2,7 @@ import { useEffect } from "react";
 import L from "leaflet";
 import PropTypes from "prop-types";
 import "./CustomDrawControl.css";
-import "./NavBar";
-import "./NavBar.css"
+
 // Custom Control Class
 const CustomDrawControl = L.Control.extend({
   options: {
