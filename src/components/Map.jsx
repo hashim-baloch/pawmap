@@ -68,6 +68,45 @@ const customMarkerIcons = {
     shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
     shadowSize: [41, 41],
   }),
+  dog: new L.Icon({
+    iconUrl: "https://cloud-qrwl9nfph-hack-club-bot.vercel.app/0dog__1_.svg",
+    iconSize: [34, 30], // Icon width and height
+    iconAnchor: [17, 30], // Center the anchor at the bottom of the icon
+    popupAnchor: [0, -25], // Position popup above the icon
+    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+    shadowSize: [36, 30], // Shadow matches icon size proportionally
+    shadowAnchor: [15, 30], // Align shadow with the base of the icon
+  }),
+
+  cat: new L.Icon({
+    iconUrl: "https://cloud-qrwl9nfph-hack-club-bot.vercel.app/1cat__1_.svg",
+    iconSize: [39, 30], // Icon width and height
+    iconAnchor: [19, 30], // Center the anchor at the bottom of the icon
+    popupAnchor: [0, -25], // Position popup above the icon
+    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+    shadowSize: [41, 31], // Shadow matches icon size proportionally
+    shadowAnchor: [18, 30], // Align shadow with the base of the icon
+  }),
+
+  other: new L.Icon({
+    iconUrl:
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+    shadowSize: [41, 41],
+  }),
+};
+
+// Function to generate a random color in HEX format
+const getRandomColor = () => {
+  const letters = "0123456789ABCDEF";
+  let color = "#";
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
 };
 
 function Map() {
@@ -80,6 +119,8 @@ function Map() {
   const [addingAnimal, setAddingAnimal] = useState(false);
   const [temporarySightings, setTemporarySightings] = useState([]);
   const [editingSighting, setEditingSighting] = useState(null);
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
   const featureGroupRef = useRef(null);
 
   const handleLayerClick = useCallback((layer) => {
@@ -154,6 +195,35 @@ function Map() {
               ? `<p><strong>Notes:</strong> ${info.incidents}</p>`
               : ""
           }
+          ${
+            info.images && info.images.length > 0
+              ? `<div class="media-section">
+                  <h5>Images:</h5>
+                  ${info.images
+                    .map(
+                      (img) =>
+                        `<img src="${img}" alt="Animal Image" class="popup-image"/>`
+                    )
+                    .join("")}
+                </div>`
+              : ""
+          }
+          ${
+            info.videos && info.videos.length > 0
+              ? `<div class="media-section">
+                  <h5>Videos:</h5>
+                  ${info.videos
+                    .map(
+                      (vid) =>
+                        `<video controls class="popup-video">
+                          <source src="${vid}" type="video/mp4">
+                          Your browser does not support the video tag.
+                        </video>`
+                    )
+                    .join("")}
+                </div>`
+              : ""
+          }
           <button class="edit-button">Edit</button>
         </div>
       `;
@@ -183,10 +253,18 @@ function Map() {
     [handleLayerClick]
   );
 
-  const handleDialogSubmit = ({ info, markerType, sightings }) => {
+  const handleDialogSubmit = ({
+    info,
+    markerType,
+    sightings,
+    images,
+    videos,
+  }) => {
     if (addingAnimal && sightings?.length >= 3) {
       try {
         const animalData = JSON.parse(info);
+        animalData.images = images; // Add this line
+        animalData.videos = videos; // Add this line
         const validSightings = filterSightingsWithinRange(
           sightings,
           animalData.type
@@ -201,22 +279,40 @@ function Map() {
 
         const centerPoint = calculateCenter(validSightings);
         if (centerPoint) {
-          // Create area with adjusted radius
+          // Generate a random color for the circle
+          const circleColor = getRandomColor();
+
+          // Create area with adjusted radius and random color
           const areaLayer = L.circle([centerPoint.lat, centerPoint.lng], {
             radius: calculateAdjustedRadius(validSightings, animalData.type),
-            color: "#4a80f5",
-            fillColor: "#4a80f5",
+            color: circleColor,
+            fillColor: circleColor,
             fillOpacity: 0.2,
             weight: 2,
           });
           featureGroupRef.current.addLayer(areaLayer);
 
-          // Create marker at center
+          // Determine marker icon based on animal type
+          let animalMarkerIcon = customMarkerIcons.default; // Fallback
+          switch (animalData.type) {
+            case "dog":
+              animalMarkerIcon = customMarkerIcons.dog;
+              break;
+            case "cat":
+              animalMarkerIcon = customMarkerIcons.cat;
+              break;
+            case "other":
+            default:
+              animalMarkerIcon = customMarkerIcons.other;
+              break;
+          }
+
+          // Create marker at center with specific icon
           const marker = L.marker([centerPoint.lat, centerPoint.lng], {
-            icon: customMarkerIcons[markerType],
+            icon: animalMarkerIcon,
           });
-          marker.info = info;
-          bindPopupToLayer(marker, info);
+          marker.info = JSON.stringify(animalData); // Update this line
+          bindPopupToLayer(marker, marker.info);
           featureGroupRef.current.addLayer(marker);
 
           setMapLayers((prevLayers) => [...prevLayers, marker, areaLayer]);
@@ -337,12 +433,53 @@ function Map() {
     return distance <= maxRange;
   };
 
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setLatitude(latitude);
+          setLongitude(longitude);
+        },
+        (error) => {
+          console.error("Error getting geolocation:", error);
+          // Set default coordinates if needed
+          setLatitude(0);
+          setLongitude(0);
+        }
+      );
+    } else {
+      // Geolocation not supported, set default coordinates
+      setLatitude(0);
+      setLongitude(0);
+    }
+  }, []);
+
+  const handleStepChange = (step) => {
+    if (step === 3) {
+      setAddingAnimal(true);
+    } else {
+      setAddingAnimal(false);
+    }
+  };
+
+  const handleDialogClose = () => {
+    setShowDialog(false);
+    setIsEdit(false);
+    setAddingAnimal(false);
+    setTemporarySightings([]);
+    setEditingSighting(null);
+  };
+
+  if (latitude === null || longitude === null) {
+    return <div>Loading map...</div>;
+  }
+
   return (
     <div className="map-wrapper">
       <button
         className="add-animal-btn"
         onClick={() => {
-          setAddingAnimal(true);
           setShowDialog(true);
         }}
       >
@@ -361,8 +498,13 @@ function Map() {
       )}
       <SearchBox onLocationSelect={handleLocationSelect} />
       <MapContainer
-        center={[51.505, -0.09]}
-        zoom={13}
+        center={[latitude, longitude]}
+        maxBounds={[
+          [-90, -180], // Southwest corner of the bounding box
+          [90, 180], // Northeast corner of the bounding box
+        ]}
+        zoom={15}
+        minZoom={2}
         style={{ height: "100vh", width: "100vw" }}
         ref={setMap}
         zoomControl={false}
@@ -393,8 +535,8 @@ function Map() {
                 JSON.parse(activeLayer?.info || '{"type":"other"}').type
               )}
               pathOptions={{
-                color: "#4a80f5",
-                fillColor: "#4a80f5",
+                color: getRandomColor(), // Assign random color
+                fillColor: getRandomColor(),
                 fillOpacity: 0.2,
                 weight: 2,
               }}
@@ -405,16 +547,11 @@ function Map() {
       {showDialog && (
         <Dialog
           onSubmit={handleDialogSubmit}
-          onClose={() => {
-            setShowDialog(false);
-            setIsEdit(false);
-            setAddingAnimal(false);
-            setTemporarySightings([]);
-            setEditingSighting(null);
-          }}
+          onClose={handleDialogClose}
           initialInfo={activeLayer?.info || ""}
           isEdit={isEdit}
           sightings={temporarySightings}
+          onStepChange={handleStepChange} // Added this line
         />
       )}
     </div>

@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import "./Dialog.css";
 
-function Dialog({ onSubmit, onClose, initialInfo = "", sightings = [] }) {
+function Dialog({
+  onSubmit,
+  onClose,
+  initialInfo = "",
+  sightings = [],
+  onStepChange,
+}) {
   const [step, setStep] = useState(1);
   const [animalInfo, setAnimalInfo] = useState({
     type: "",
@@ -13,6 +19,8 @@ function Dialog({ onSubmit, onClose, initialInfo = "", sightings = [] }) {
     sightings: [],
     incidents: "",
     lastSeen: new Date().toISOString().split("T")[0],
+    images: [],
+    videos: [],
   });
 
   useEffect(() => {
@@ -33,6 +41,12 @@ function Dialog({ onSubmit, onClose, initialInfo = "", sightings = [] }) {
     }));
   }, [sightings]);
 
+  useEffect(() => {
+    if (onStepChange) {
+      onStepChange(step);
+    }
+  }, [step, onStepChange]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (step < 3) {
@@ -43,6 +57,8 @@ function Dialog({ onSubmit, onClose, initialInfo = "", sightings = [] }) {
         info,
         markerType: getMarkerType(animalInfo.healthStatus),
         sightings: animalInfo.sightings,
+        images: animalInfo.images,
+        videos: animalInfo.videos,
       });
     }
   };
@@ -57,6 +73,15 @@ function Dialog({ onSubmit, onClose, initialInfo = "", sightings = [] }) {
       default:
         return "info";
     }
+  };
+
+  const handleFileChange = (e, type) => {
+    const files = Array.from(e.target.files);
+    const urls = files.map((file) => URL.createObjectURL(file));
+    setAnimalInfo((prev) => ({
+      ...prev,
+      [type]: [...prev[type], ...urls],
+    }));
   };
 
   const renderStep = () => {
@@ -165,6 +190,24 @@ function Dialog({ onSubmit, onClose, initialInfo = "", sightings = [] }) {
                 }
               />
             </div>
+            <div className="form-group">
+              <label>Upload Images:</label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => handleFileChange(e, "images")}
+              />
+            </div>
+            <div className="form-group">
+              <label>Upload Videos:</label>
+              <input
+                type="file"
+                accept="video/*"
+                multiple
+                onChange={(e) => handleFileChange(e, "videos")}
+              />
+            </div>
           </>
         );
       case 3:
@@ -216,6 +259,7 @@ Dialog.propTypes = {
   initialInfo: PropTypes.string,
   isEdit: PropTypes.bool,
   sightings: PropTypes.array,
+  onStepChange: PropTypes.func,
 };
 
 export default Dialog;
