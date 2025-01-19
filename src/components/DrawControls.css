@@ -1,0 +1,55 @@
+/* Custom styles for draw controls */
+.leaflet-draw-toolbar {
+  background-color: #ffffff !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-draw-toolbar a {
+  background-color: #ffffff !important;
+  width: 34px !important;
+  height: 34px !important;
+  line-height: 34px !important;
+}
+
+.leaflet-draw-toolbar a:hover {
+  background-color: #f0f0f0 !important;
+}
+
+.leaflet-draw-draw-polyline {
+  background-position: -2px -2px !important;
+}
+.leaflet-draw-draw-polygon {
+  background-position: -31px -2px !important;
+}
+.leaflet-draw-draw-rectangle {
+  background-position: -62px -2px !important;
+}
+.leaflet-draw-draw-circle {
+  background-position: -92px -2px !important;
+}
+.leaflet-draw-draw-marker {
+  background-position: -122px -2px !important;
+}
+
+/* Custom styles for the edit toolbar */
+.leaflet-draw-edit-edit {
+  background-position: -152px -2px !important;
+}
+.leaflet-draw-edit-remove {
+  background-position: -182px -2px !important;
+}
+
+/* Tooltip customization */
+.leaflet-draw-tooltip {
+  background: rgba(0, 0, 0, 0.8) !important;
+  border: none !important;
+  border-radius: 4px !important;
+  color: white !important;
+  font-size: 12px !important;
+  padding: 4px 8px !important;
+}
+
+.leaflet-draw-tooltip:before {
+  border-right-color: rgba(0, 0, 0, 0.8) !important;
+}

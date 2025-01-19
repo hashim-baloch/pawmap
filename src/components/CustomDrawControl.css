@@ -1,0 +1,33 @@
+.custom-draw-control {
+  background: white;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.custom-draw-button {
+  display: block;
+  padding: 8px 12px;
+  margin: 4px 0;
+  width: 100%;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.custom-draw-button:hover {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+.custom-draw-button:first-child {
+  margin-top: 0;
+}
+
+.custom-draw-button:last-child {
+  margin-bottom: 0;
+}

@@ -4,185 +4,154 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 import "leaflet-draw";
+import "./DrawControls.css";
 
-// Initialize area measurement functionality
-L.GeometryUtil = {
-  ...L.GeometryUtil,
-  readableArea: function (area, isMetric) {
-    const areaStr = L.GeometryUtil.formattedNumber(area, 2);
-    return isMetric
-      ? `${areaStr} m²`
-      : `${L.GeometryUtil.formattedNumber(area * 3.28084, 2)} ft²`;
-  },
-  formattedNumber: function (num, precision) {
-    return Number(num.toFixed(precision));
+// Extend Leaflet with measurement utilities
+L.Measure = {
+  // Geodesic area calculation
+  geodesicArea: function (latLngs) {
+    let area = 0;
+    if (latLngs.length > 2) {
+      for (let i = 0; i < latLngs.length; i++) {
+        const p1 = latLngs[i];
+        const p2 = latLngs[(i + 1) % latLngs.length];
+        area +=
+          (((p2.lng - p1.lng) * Math.PI) / 180) *
+          (2 +
+            Math.sin((p1.lat * Math.PI) / 180) +
+            Math.sin((p2.lat * Math.PI) / 180));
+      }
+      area = Math.abs((area * 6378137 * 6378137) / 2);
+    }
+    return area;
   },
 };
 
-// Initialize complete Leaflet Draw localization
-L.drawLocal = {
-  draw: {
-    toolbar: {
-      actions: {
-        title: "Cancel drawing",
-        text: "Cancel",
-      },
-      finish: {
-        title: "Finish drawing",
-        text: "Finish",
-      },
-      undo: {
-        title: "Delete last point drawn",
-        text: "Delete last point",
-      },
-      buttons: {
-        polyline: "Draw a polyline",
-        polygon: "Draw a polygon",
-        rectangle: "Draw a rectangle",
-        circle: "Draw a circle",
-        marker: "Draw a marker",
-        circlemarker: "Draw a circlemarker",
-      },
-    },
-    handlers: {
-      circle: {
-        tooltip: {
-          start: "Click and drag to draw circle.",
-          end: "Release mouse to finish drawing.",
-        },
-        radius: "Radius",
-      },
-      circlemarker: {
-        tooltip: {
-          start: "Click map to place circle marker.",
-        },
-      },
-      marker: {
-        tooltip: {
-          start: "Click map to place marker.",
-        },
-      },
-      polygon: {
-        tooltip: {
-          start: "Click to start drawing shape.",
-          cont: "Click to continue drawing shape.",
-          end: "Click first point to close this shape.",
-        },
-      },
-      polyline: {
-        error: "<strong>Error:</strong> shape edges cannot cross!",
-        tooltip: {
-          start: "Click to start drawing line.",
-          cont: "Click to continue drawing line.",
-          end: "Click last point to finish line.",
-        },
-      },
-      rectangle: {
-        tooltip: {
-          start: "Click and drag to draw rectangle.",
-        },
-      },
-      simpleshape: {
-        tooltip: {
-          end: "Release mouse to finish drawing.",
-        },
-      },
-    },
+// Extend Draw handlers
+L.Draw.Polygon.include({
+  _getTooltipText: function () {
+    var text, subtext;
+    if (!this._poly) {
+      text = L.drawLocal.draw.handlers.polygon.tooltip.start;
+    } else {
+      if (this._poly.getLatLngs().length === 0) {
+        text = L.drawLocal.draw.handlers.polygon.tooltip.start;
+      } else {
+        text = L.drawLocal.draw.handlers.polygon.tooltip.cont;
+        var area = L.Measure.geodesicArea(this._poly.getLatLngs()[0]);
+        if (area > 10000) {
+          subtext = (area / 10000).toFixed(2) + " ha";
+        } else {
+          subtext = area.toFixed(2) + " m²";
+        }
+      }
+    }
+    return {
+      text: text,
+      subtext: subtext,
+    };
   },
-  edit: {
-    toolbar: {
-      actions: {
-        save: {
-          title: "Save changes",
-          text: "Save",
-        },
-        cancel: {
-          title: "Cancel editing, discards all changes",
-          text: "Cancel",
-        },
-        clearAll: {
-          title: "Clear all layers",
-          text: "Clear All",
-        },
-      },
-      buttons: {
-        edit: "Edit layers",
-        editDisabled: "No layers to edit",
-        remove: "Delete layers",
-        removeDisabled: "No layers to delete",
-      },
-    },
-    handlers: {
-      edit: {
-        tooltip: {
-          text: "Drag handles or markers to edit features.",
-          subtext: "Click cancel to undo changes.",
-        },
-      },
-      remove: {
-        tooltip: {
-          text: "Click on a feature to remove.",
-        },
-      },
-    },
+});
+
+L.Draw.Rectangle.include({
+  _getTooltipText: function () {
+    var text, subtext;
+    if (!this._shape) {
+      text = L.drawLocal.draw.handlers.rectangle.tooltip.start;
+    } else {
+      text = L.drawLocal.draw.handlers.rectangle.tooltip.cont;
+      var area = L.Measure.geodesicArea(this._shape.getLatLngs()[0]);
+      if (area > 10000) {
+        subtext = (area / 10000).toFixed(2) + " ha";
+      } else {
+        subtext = area.toFixed(2) + " m²";
+      }
+    }
+    return {
+      text: text,
+      subtext: subtext,
+    };
   },
-};
+});
 
 function DrawControls({
   map,
   featureGroupRef,
   onLayerCreated,
   onLayersDeleted,
+  position = "topleft",
 }) {
   useEffect(() => {
     if (!map || !featureGroupRef.current) return;
 
     const drawOptions = {
-      position: "topright",
+      position: position,
       draw: {
         polyline: {
           shapeOptions: {
-            color: "#f357a1",
-            weight: 3,
+            color: "#2196F3",
+            weight: 4,
+            opacity: 0.7,
+            lineCap: "round",
+            lineJoin: "round",
           },
           metric: true,
           showLength: true,
           feet: false,
+          repeatMode: false,
         },
         polygon: {
           allowIntersection: false,
           drawError: {
-            color: "#e1e100",
+            color: "#FE5F55",
             message: "<strong>Error:</strong> shape edges cannot cross!",
           },
           shapeOptions: {
-            color: "#bada55",
+            color: "#4CAF50",
+            fillColor: "#4CAF50",
+            fillOpacity: 0.3,
+            weight: 3,
           },
-          metric: true,
           showArea: true,
+          metric: true,
           feet: false,
+          repeatMode: false,
         },
         circle: {
           shapeOptions: {
-            color: "#662d91",
+            color: "#9C27B0",
+            fillColor: "#9C27B0",
+            fillOpacity: 0.3,
+            weight: 3,
           },
+          showRadius: true,
           metric: true,
           feet: false,
-          showRadius: true,
+          repeatMode: false,
         },
         marker: {
+          icon: new L.Icon({
+            iconUrl:
+              "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowUrl:
+              "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+            shadowSize: [41, 41],
+          }),
           repeatMode: false,
         },
         rectangle: {
           shapeOptions: {
-            color: "#4a80f5",
-            weight: 2,
-            opacity: 0.8,
+            color: "#FF9800",
+            fillColor: "#FF9800",
             fillOpacity: 0.3,
+            weight: 3,
           },
+          showArea: true,
           metric: true,
           feet: false,
-          showArea: true,
           repeatMode: false,
         },
         circlemarker: false,
@@ -192,8 +161,11 @@ function DrawControls({
         remove: true,
         edit: {
           selectedPathOptions: {
-            maintainColor: true,
+            color: "#FFC107",
+            fillColor: "#FFC107",
+            fillOpacity: 0.3,
             dashArray: "10, 10",
+            weight: 3,
           },
         },
       },
@@ -221,10 +193,11 @@ function DrawControls({
       map.off(L.Draw.Event.CREATED, handleDrawCreated);
       map.off(L.Draw.Event.DELETED, handleDrawDeleted);
     };
-  }, [map, featureGroupRef, onLayerCreated, onLayersDeleted]);
+  }, [map, featureGroupRef, onLayerCreated, onLayersDeleted, position]);
 
   return null;
 }
+
 DrawControls.propTypes = {
   map: PropTypes.object.isRequired,
   featureGroupRef: PropTypes.shape({
@@ -232,6 +205,12 @@ DrawControls.propTypes = {
   }).isRequired,
   onLayerCreated: PropTypes.func.isRequired,
   onLayersDeleted: PropTypes.func.isRequired,
+  position: PropTypes.oneOf([
+    "topleft",
+    "topright",
+    "bottomleft",
+    "bottomright",
+  ]),
 };
 
 export default DrawControls;
