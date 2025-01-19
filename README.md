@@ -1,6 +1,3 @@
-<<<<<<< HEAD:Frontend/README.md
-This is a stary animal tracker project which is a work in progress.
-=======
 # PawMap
 
 PawMap is a Social impact track project aimed at improving the lives of stray animals by providing a platform for users to monitor, care for, and assist stray animals in their area. Through this project, users can take meaningful actions to ensure the safety and well-being of animals in need.
@@ -29,14 +26,14 @@ Frontend: JavaScript, React, HTML, CSS
 
 Backend: Node.js, Express.js
 
-Database:  PostgreSQL
+Database: PostgreSQL
 
-Maps Integration: 
-
+Maps Integration:
 
 ## Figma Design
+
 View the project design on Figma:
- https://www.figma.com/design/bnpVVSUKHeA8MLBflbCy7K/Hack-United?node-id=0-1&t=aLGbbySIwjG81ZAv-0
+https://www.figma.com/design/bnpVVSUKHeA8MLBflbCy7K/Hack-United?node-id=0-1&t=aLGbbySIwjG81ZAv-0
 
 ## Contribution
 
@@ -48,13 +45,15 @@ We welcome contributions from the community! If you'd like to contribute:
    git checkout -b feature-name
 
 3. Commit your changes:
-    git commit -m "Add feature name"
+   git commit -m "Add feature name"
 
 4. Push the branch to your fork:
-    git push origin feature-name
+   git push origin feature-name
 
 5. Open a pull request.
 
 ## License
+
 This project is licensed under the MIT License.
->>>>>>> 55048895761497c73e844377b70fd79c531c43b2:README.md
+
+> > > > > > > 55048895761497c73e844377b70fd79c531c43b2:README.md
