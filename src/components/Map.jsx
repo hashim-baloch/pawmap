@@ -79,6 +79,7 @@ function Map() {
   const [isEdit, setIsEdit] = useState(false);
   const [addingAnimal, setAddingAnimal] = useState(false);
   const [temporarySightings, setTemporarySightings] = useState([]);
+  const [editingSighting, setEditingSighting] = useState(null);
   const featureGroupRef = useRef(null);
 
   const handleLayerClick = useCallback((layer) => {
@@ -95,6 +96,45 @@ function Map() {
     },
     [map]
   );
+
+  const createSightingPopupContent = (index) => {
+    return `
+      <div class="popup-content">
+        <h4>Sighting #${index + 1}</h4>
+        <div class="sighting-controls">
+          <button class="edit-sighting-btn">Edit Location</button>
+          <button class="delete-sighting-btn">Delete</button>
+        </div>
+      </div>
+    `;
+  };
+
+  const handleSightingEdit = (index) => {
+    setEditingSighting(index);
+    map.closePopup();
+  };
+
+  const handleSightingDelete = (index) => {
+    setTemporarySightings((prev) => prev.filter((_, i) => i !== index));
+    map.closePopup();
+  };
+
+  const bindSightingPopup = (marker, index) => {
+    const popupContent = createSightingPopupContent(index);
+    marker.bindPopup(popupContent);
+
+    marker.on("popupopen", () => {
+      const editBtn = document.querySelector(".edit-sighting-btn");
+      const deleteBtn = document.querySelector(".delete-sighting-btn");
+
+      if (editBtn) {
+        editBtn.addEventListener("click", () => handleSightingEdit(index));
+      }
+      if (deleteBtn) {
+        deleteBtn.addEventListener("click", () => handleSightingDelete(index));
+      }
+    });
+  };
 
   const createPopupContent = (animalInfo) => {
     try {
@@ -204,36 +244,7 @@ function Map() {
   };
 
   useEffect(() => {
-    if (map && addingAnimal) {
-      const handleMapClick = (e) => {
-        const newSighting = {
-          lat: e.latlng.lat,
-          lng: e.latlng.lng,
-          date: new Date().toISOString().split("T")[0],
-        };
-        setTemporarySightings((prev) => [...prev, newSighting]);
-      };
-
-      map.on("click", handleMapClick);
-      return () => map.off("click", handleMapClick);
-    }
-  }, [map, addingAnimal]);
-
-  const isWithinRange = (newSighting, existingSightings, animalType) => {
-    if (existingSightings.length === 0) return true;
-
-    const maxRange = MAX_ROAMING_RANGES[animalType] || MAX_ROAMING_RANGES.other;
-    const center =
-      existingSightings.length > 0
-        ? calculateCenter(existingSightings)
-        : existingSightings[0];
-
-    const distance = calculateDistance(center, newSighting);
-    return distance <= maxRange;
-  };
-
-  useEffect(() => {
-    if (map && addingAnimal) {
+    if (map && addingAnimal && !editingSighting) {
       const handleMapClick = (e) => {
         const newSighting = {
           lat: e.latlng.lat,
@@ -267,7 +278,64 @@ function Map() {
       map.on("click", handleMapClick);
       return () => map.off("click", handleMapClick);
     }
-  }, [map, addingAnimal, temporarySightings, activeLayer]);
+  }, [map, addingAnimal, temporarySightings, activeLayer, editingSighting]);
+
+  useEffect(() => {
+    if (map && editingSighting !== null) {
+      const handleMapClick = (e) => {
+        const updatedSighting = {
+          lat: e.latlng.lat,
+          lng: e.latlng.lng,
+          date: temporarySightings[editingSighting].date,
+        };
+
+        const currentAnimalType = JSON.parse(
+          activeLayer?.info || '{"type":"other"}'
+        ).type;
+
+        const otherSightings = temporarySightings.filter(
+          (_, i) => i !== editingSighting
+        );
+
+        if (
+          otherSightings.length > 0 &&
+          !isWithinRange(updatedSighting, otherSightings, currentAnimalType)
+        ) {
+          const maxRange =
+            MAX_ROAMING_RANGES[currentAnimalType] || MAX_ROAMING_RANGES.other;
+          alert(
+            `This location is too far from other sightings. Maximum range for ${currentAnimalType} is ${
+              maxRange / 1000
+            } km.`
+          );
+          return;
+        }
+
+        setTemporarySightings((prev) =>
+          prev.map((sight, i) =>
+            i === editingSighting ? updatedSighting : sight
+          )
+        );
+        setEditingSighting(null);
+      };
+
+      map.on("click", handleMapClick);
+      return () => map.off("click", handleMapClick);
+    }
+  }, [map, editingSighting, temporarySightings, activeLayer]);
+
+  const isWithinRange = (newSighting, existingSightings, animalType) => {
+    if (existingSightings.length === 0) return true;
+
+    const maxRange = MAX_ROAMING_RANGES[animalType] || MAX_ROAMING_RANGES.other;
+    const center =
+      existingSightings.length > 0
+        ? calculateCenter(existingSightings)
+        : existingSightings[0];
+
+    const distance = calculateDistance(center, newSighting);
+    return distance <= maxRange;
+  };
 
   return (
     <div className="map-wrapper">
@@ -280,6 +348,17 @@ function Map() {
       >
         Add Animal
       </button>
+      {editingSighting !== null && (
+        <div className="editing-notice">
+          Click on the map to move sighting #{editingSighting + 1}
+          <button
+            onClick={() => setEditingSighting(null)}
+            className="cancel-edit-btn"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
       <SearchBox onLocationSelect={handleLocationSelect} />
       <MapContainer
         center={[51.505, -0.09]}
@@ -299,6 +378,11 @@ function Map() {
               key={index}
               position={[sight.lat, sight.lng]}
               icon={customMarkerIcons.temporary}
+              ref={(markerRef) => {
+                if (markerRef) {
+                  bindSightingPopup(markerRef, index);
+                }
+              }}
             />
           ))}
           {temporarySightings.length >= 3 && (
@@ -326,6 +410,7 @@ function Map() {
             setIsEdit(false);
             setAddingAnimal(false);
             setTemporarySightings([]);
+            setEditingSighting(null);
           }}
           initialInfo={activeLayer?.info || ""}
           isEdit={isEdit}
