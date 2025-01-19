@@ -181,50 +181,67 @@ function Map() {
     try {
       const info = JSON.parse(animalInfo);
       return `
-        <div class="popup-content">
-          <h4>${info.type.charAt(0).toUpperCase() + info.type.slice(1)}</h4>
-          <p><strong>Breed:</strong> ${info.breed}</p>
-          <p><strong>Color:</strong> ${info.color}</p>
-          <p><strong>Size:</strong> ${info.size}</p>
-          <p><strong>Health Status:</strong> ${info.healthStatus}</p>
-          <p><strong>Last Seen:</strong> ${new Date(
-            info.lastSeen
-          ).toLocaleDateString()}</p>
-          ${
-            info.incidents
-              ? `<p><strong>Notes:</strong> ${info.incidents}</p>`
-              : ""
-          }
-          ${
-            info.images && info.images.length > 0
-              ? `<div class="media-section">
-                  <h5>Images:</h5>
-                  ${info.images
-                    .map(
-                      (img) =>
-                        `<img src="${img}" alt="Animal Image" class="popup-image"/>`
-                    )
-                    .join("")}
-                </div>`
-              : ""
-          }
-          ${
-            info.videos && info.videos.length > 0
-              ? `<div class="media-section">
-                  <h5>Videos:</h5>
-                  ${info.videos
-                    .map(
-                      (vid) =>
-                        `<video controls class="popup-video">
-                          <source src="${vid}" type="video/mp4">
-                          Your browser does not support the video tag.
-                        </video>`
-                    )
-                    .join("")}
-                </div>`
-              : ""
-          }
-          <button class="edit-button">Edit</button>
+      <div class="popup-content">
+      <div class="carousel">
+      <div class="carousel-slide">
+      <img src="${
+        info.coverImage || info.images[0]
+      }" alt="Cover Image" class="carousel-image"/>
+      <h4>${info.type.charAt(0).toUpperCase() + info.type.slice(1)} - ${
+        info.breed
+      }</h4>
+      <button class="edit-button">Edit</button>
+            </div>
+
+            <div class="carousel-slide">
+              <p><strong>Color:</strong> ${info.color}</p>
+              <p><strong>Size:</strong> ${info.size}</p>
+              <p><strong>Health Status:</strong> ${info.healthStatus}</p>
+              <p><strong>Last Seen:</strong> ${new Date(
+                info.lastSeen
+              ).toLocaleDateString()}</p>
+              ${
+                info.incidents
+                  ? `<p><strong>Notes:</strong> ${info.incidents}</p>`
+                  : ""
+              }
+            </div>
+            <div class="carousel-slide">
+              ${
+                info.images && info.images.length > 1
+                  ? `<div class="additional-images">
+                    ${info.images
+                      .slice(1)
+                      .map(
+                        (img) =>
+                          `<img src="${img}" alt="Additional Image" class="popup-image"/>`
+                      )
+                      .join("")}
+                  </div>`
+                  : ""
+              }
+              ${
+                info.videos && info.videos.length > 0
+                  ? `<div class="media-section">
+                    <h5>Videos:</h5>
+                    ${info.videos
+                      .map(
+                        (vid) =>
+                          `<video controls class="popup-video">
+                            <source src="${vid}" type="video/mp4">
+                            Your browser does not support the video tag.
+                          </video>`
+                      )
+                      .join("")}
+                  </div>`
+                  : ""
+              }
+            </div>
+            <div class="carousel-navigation">
+              <button class="prev-btn">&#10094;</button>
+              <button class="next-btn">&#10095;</button>
+            </div>
+          </div>
         </div>
       `;
     } catch (error) {
@@ -247,6 +264,75 @@ function Map() {
         const editButton = document.querySelector(".edit-button");
         if (editButton) {
           editButton.addEventListener("click", () => handleLayerClick(layer));
+        }
+
+        // Initialize Carousel
+        const slides = document.querySelectorAll(".carousel-slide");
+        const prevBtn = document.querySelector(".prev-btn");
+        const nextBtn = document.querySelector(".next-btn");
+        let currentSlide = 0;
+
+        if (slides.length > 0) {
+          slides.forEach((slide, index) => {
+            slide.classList.remove("active");
+            if (index === 0) {
+              slide.classList.add("active");
+            }
+          });
+        }
+
+        const showSlide = (index) => {
+          slides.forEach((slide) => slide.classList.remove("active"));
+          if (slides[index]) {
+            slides[index].classList.add("active");
+          }
+        };
+
+        const showNextSlide = () => {
+          currentSlide = (currentSlide + 1) % slides.length;
+          showSlide(currentSlide);
+        };
+
+        const showPrevSlide = () => {
+          currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+          showSlide(currentSlide);
+        };
+
+        if (nextBtn && slides.length > 1) {
+          nextBtn.addEventListener("click", showNextSlide);
+        }
+
+        if (prevBtn && slides.length > 1) {
+          prevBtn.addEventListener("click", showPrevSlide);
+        }
+
+        // Center the popup on the screen
+        const popup = layer.getPopup();
+        if (popup) {
+          popup.once("open", () => {
+            const popupContainer = document.querySelector(
+              ".leaflet-popup-content-wrapper"
+            );
+            if (popupContainer) {
+              popupContainer.style.display = "flex";
+              popupContainer.style.justifyContent = "center";
+              popupContainer.style.alignItems = "center";
+            }
+          });
+        }
+      });
+
+      // Ensure to remove event listeners when popup closes to prevent memory leaks
+      layer.on("popupclose", () => {
+        const prevBtn = document.querySelector(".prev-btn");
+        const nextBtn = document.querySelector(".next-btn");
+
+        if (prevBtn) {
+          prevBtn.removeEventListener("click", showPrevSlide);
+        }
+
+        if (nextBtn) {
+          nextBtn.removeEventListener("click", showNextSlide);
         }
       });
     },

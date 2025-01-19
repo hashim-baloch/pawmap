@@ -19,7 +19,10 @@
 .popup-content {
   padding: 10px;
   width: 300px;
-  overflow: scroll;
+  height: 300px; /* Limit the popup height to 80% of viewport height */
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .popup-content h4 {
@@ -167,4 +170,94 @@
   display: flex;
   gap: 5px;
   margin-top: 10px;
+}
+
+/* Carousel Container */
+.carousel {
+  position: relative;
+  width: 100%;
+  height: 100%; /* Make carousel take full height of popup-content */
+  overflow: hidden;
+  max-height: 400px;
+  box-sizing: border-box;
+}
+
+/* Individual Slides */
+.carousel-slide {
+  display: none;
+  padding: 10px;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.carousel-slide.active {
+  display: block;
+}
+
+.carousel-image {
+  max-width: 100%;
+  max-height: 200px; /* Adjust as needed to fit within the popup */
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.additional-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-height: 150px; /* Limit the height of additional images section */
+  overflow-y: auto;
+}
+
+.additional-images .popup-image {
+  width: 48%;
+  height: auto;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.popup-video {
+  max-width: 100%;
+  max-height: 200px; /* Adjust as needed to fit within the popup */
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* Navigation Buttons */
+.carousel-navigation {
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  transform: translateY(-50%);
+}
+
+.prev-btn,
+.next-btn {
+  background-color: rgba(0, 0, 0, 0.5);
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 50%;
+  z-index: 10; /* Ensure buttons are above other content */
+}
+
+.prev-btn:hover,
+.next-btn:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Active Slide */
+.carousel-slide.active {
+  display: block;
+}
+
+/* Centering the Popup on the Screen */
+.leaflet-popup-content-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
