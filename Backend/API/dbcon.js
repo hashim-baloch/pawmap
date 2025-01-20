@@ -1,3 +1,4 @@
+
 require("dotenv").config()
 const Pool = require("pg").Pool;
 
@@ -7,6 +8,7 @@ const dbConfig = {
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DB,
     port: process.env.POSTGRES_PORT
+
 }
 
 const pool = new Pool(dbConfig);

@@ -8,6 +8,7 @@ const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET; // Load secret key from .env file
 
+
 // Register Route
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
@@ -23,6 +24,7 @@ router.post('/register', async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
   await addUser({ username, password: hashedPassword });
+
   res.status(201).json({ message: 'User registered successfully' });
 });
 
@@ -37,6 +39,7 @@ router.post('/login', async (req, res) => {
   const user = await findUserByUsername(username); // Assume async function
   if (!user) {
     return res.status(400).json({ error: 'Invalid credentials' });
+
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -45,6 +48,7 @@ router.post('/login', async (req, res) => {
   }
 
   const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
+
   res.json({ message: 'Login successful', token });
 });
 
