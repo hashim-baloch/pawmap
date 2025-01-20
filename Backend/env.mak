@@ -1,2 +1,4 @@
-PORT=5002
-JWT_SECRET=YourJWTSecret
+PORT=5003
+JWT_SECRET=your_secret_key
+MONGO_URI=your_mongo_uri
+
