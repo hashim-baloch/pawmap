@@ -21,6 +21,13 @@ import {
   MAX_ROAMING_RANGES,
 } from "../utils/animalRangeUtils";
 import "./Map.css";
+import {
+  getAllAnimals,
+  addAnimal,
+  updateAnimal,
+  deleteAnimal,
+  uploadImage,
+} from "../services/api";
 
 const customMarkerIcons = {
   default: new L.Icon({
@@ -70,22 +77,22 @@ const customMarkerIcons = {
   }),
   dog: new L.Icon({
     iconUrl: "https://cloud-qrwl9nfph-hack-club-bot.vercel.app/0dog__1_.svg",
-    iconSize: [34, 30], // Icon width and height
-    iconAnchor: [17, 30], // Center the anchor at the bottom of the icon
-    popupAnchor: [0, -25], // Position popup above the icon
+    iconSize: [34, 30],
+    iconAnchor: [17, 30],
+    popupAnchor: [0, -25],
     shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-    shadowSize: [36, 30], // Shadow matches icon size proportionally
-    shadowAnchor: [15, 30], // Align shadow with the base of the icon
+    shadowSize: [36, 30],
+    shadowAnchor: [15, 30],
   }),
 
   cat: new L.Icon({
     iconUrl: "https://cloud-qrwl9nfph-hack-club-bot.vercel.app/1cat__1_.svg",
-    iconSize: [39, 30], // Icon width and height
-    iconAnchor: [19, 30], // Center the anchor at the bottom of the icon
-    popupAnchor: [0, -25], // Position popup above the icon
+    iconSize: [39, 30],
+    iconAnchor: [19, 30],
+    popupAnchor: [0, -25],
     shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-    shadowSize: [41, 31], // Shadow matches icon size proportionally
-    shadowAnchor: [18, 30], // Align shadow with the base of the icon
+    shadowSize: [41, 31],
+    shadowAnchor: [18, 30],
   }),
 
   other: new L.Icon({
@@ -99,7 +106,6 @@ const customMarkerIcons = {
   }),
 };
 
-// Function to generate a random color in HEX format
 const getRandomColor = () => {
   const letters = "0123456789ABCDEF";
   let color = "#";
@@ -111,7 +117,6 @@ const getRandomColor = () => {
 
 function Map() {
   const [map, setMap] = useState(null);
-  // eslint-disable-next-line no-unused-vars
   const [mapLayers, setMapLayers] = useState([]);
   const [showDialog, setShowDialog] = useState(false);
   const [activeLayer, setActiveLayer] = useState(null);
@@ -181,65 +186,23 @@ function Map() {
     try {
       const info = JSON.parse(animalInfo);
       return `
-      <div class="popup-content">
-      <div class="carousel">
-      <div class="carousel-slide">
-      <img src="${
-        info.coverImage || info.images[0]
-      }" alt="Cover Image" class="carousel-image"/>
-      <h4>${info.type.charAt(0).toUpperCase() + info.type.slice(1)} - ${
-        info.breed
-      }</h4>
-      <button class="edit-button">Edit</button>
-            </div>
-
-            <div class="carousel-slide">
-              <p><strong>Color:</strong> ${info.color}</p>
-              <p><strong>Size:</strong> ${info.size}</p>
-              <p><strong>Health Status:</strong> ${info.healthStatus}</p>
-              <p><strong>Last Seen:</strong> ${new Date(
-                info.lastSeen
-              ).toLocaleDateString()}</p>
-              ${
-                info.incidents
-                  ? `<p><strong>Notes:</strong> ${info.incidents}</p>`
-                  : ""
-              }
-            </div>
-            <div class="carousel-slide">
-              ${
-                info.images && info.images.length > 1
-                  ? `<div class="additional-images">
-                    ${info.images
-                      .slice(1)
-                      .map(
-                        (img) =>
-                          `<img src="${img}" alt="Additional Image" class="popup-image"/>`
-                      )
-                      .join("")}
-                  </div>`
-                  : ""
-              }
-              ${
-                info.videos && info.videos.length > 0
-                  ? `<div class="media-section">
-                    <h5>Videos:</h5>
-                    ${info.videos
-                      .map(
-                        (vid) =>
-                          `<video controls class="popup-video">
-                            <source src="${vid}" type="video/mp4">
-                            Your browser does not support the video tag.
-                          </video>`
-                      )
-                      .join("")}
-                  </div>`
-                  : ""
-              }
-            </div>
-            <div class="carousel-navigation">
-              <button class="prev-btn">&#10094;</button>
-              <button class="next-btn">&#10095;</button>
+        <div class="popup-content">
+          <div class="carousel">
+            <div class="carousel-slide active">
+              <h4>${info.animal_type} - ${info.animal_name}</h4>
+              <p><strong>Health Status:</strong> ${info.health_status}</p>
+              <p><strong>Incident:</strong> ${
+                info.incident || "None reported"
+              }</p>
+              <p><strong>Location:</strong> ${info.latitude}, ${
+        info.longitude
+      }</p>
+              <div class="popup-actions">
+                <button class="edit-button">Edit</button>
+                <button class="delete-button" data-id="${
+                  info.id
+                }">Delete</button>
+              </div>
             </div>
           </div>
         </div>
@@ -248,13 +211,11 @@ function Map() {
       console.error("Error parsing animal info:", error);
       return `
         <div class="popup-content">
-          <p>${animalInfo}</p>
-          <button class="edit-button">Edit</button>
+          <p>Error displaying animal information</p>
         </div>
       `;
     }
   };
-
   const bindPopupToLayer = useCallback(
     (layer, info) => {
       const popupContent = createPopupContent(info);
@@ -262,108 +223,66 @@ function Map() {
 
       layer.on("popupopen", () => {
         const editButton = document.querySelector(".edit-button");
+        const deleteButton = document.querySelector(".delete-button");
+
         if (editButton) {
           editButton.addEventListener("click", () => handleLayerClick(layer));
         }
 
-        // Initialize Carousel
-        const slides = document.querySelectorAll(".carousel-slide");
-        const prevBtn = document.querySelector(".prev-btn");
-        const nextBtn = document.querySelector(".next-btn");
-        let currentSlide = 0;
-
-        if (slides.length > 0) {
-          slides.forEach((slide, index) => {
-            slide.classList.remove("active");
-            if (index === 0) {
-              slide.classList.add("active");
-            }
-          });
-        }
-
-        const showSlide = (index) => {
-          slides.forEach((slide) => slide.classList.remove("active"));
-          if (slides[index]) {
-            slides[index].classList.add("active");
-          }
-        };
-
-        const showNextSlide = () => {
-          currentSlide = (currentSlide + 1) % slides.length;
-          showSlide(currentSlide);
-        };
-
-        const showPrevSlide = () => {
-          currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-          showSlide(currentSlide);
-        };
-
-        if (nextBtn && slides.length > 1) {
-          nextBtn.addEventListener("click", showNextSlide);
-        }
-
-        if (prevBtn && slides.length > 1) {
-          prevBtn.addEventListener("click", showPrevSlide);
-        }
-
-        // Center the popup on the screen
-        const popup = layer.getPopup();
-        if (popup) {
-          popup.once("open", () => {
-            const popupContainer = document.querySelector(
-              ".leaflet-popup-content-wrapper"
-            );
-            if (popupContainer) {
-              popupContainer.style.display = "flex";
-              popupContainer.style.justifyContent = "center";
-              popupContainer.style.alignItems = "center";
-            }
-          });
-        }
-      });
-
-      // Ensure to remove event listeners when popup closes to prevent memory leaks
-      layer.on("popupclose", () => {
-        const prevBtn = document.querySelector(".prev-btn");
-        const nextBtn = document.querySelector(".next-btn");
-
-        if (prevBtn) {
-          prevBtn.removeEventListener("click", showPrevSlide);
-        }
-
-        if (nextBtn) {
-          nextBtn.removeEventListener("click", showNextSlide);
+        if (deleteButton) {
+          const animalId = deleteButton.getAttribute("data-id");
+          deleteButton.addEventListener("click", () =>
+            handleDeleteAnimal(animalId)
+          );
         }
       });
     },
-    [handleLayerClick]
+    [handleLayerClick, handleDeleteAnimal]
   );
 
-  // Add fetchExistingData function
   const fetchExistingData = async () => {
     try {
-      const response = await fetch(
-        "https://localhost:5002/api/animals/get/all"
-      );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const animals = await response.json();
+      const response = await getAllAnimals();
+      const animals = response.data;
+
       animals.forEach((animal) => {
-        const marker = L.marker([animal.latitude, animal.longitude], {
-          icon: customMarkerIcons[animal.type] || customMarkerIcons.default,
-        });
-        marker.info = JSON.stringify(animal);
+        // Create marker
+        const marker = L.marker(
+          [parseFloat(animal.latitude), parseFloat(animal.longitude)],
+          {
+            icon:
+              customMarkerIcons[animal.animal_type?.toLowerCase()] ||
+              customMarkerIcons.default,
+          }
+        );
+
+        // Create info object that matches the expected structure
+        const markerInfo = {
+          id: animal.id,
+          animal_type: animal.animal_type,
+          animal_name: animal.animal_name,
+          incident: animal.incident,
+          health_status: animal.health_status,
+          latitude: animal.latitude,
+          longitude: animal.longitude,
+        };
+
+        marker.info = JSON.stringify(markerInfo);
         bindPopupToLayer(marker, marker.info);
         featureGroupRef.current.addLayer(marker);
 
-        const areaLayer = L.circle([animal.latitude, animal.longitude], {
-          radius: animal.radius,
-          color: animal.color,
-          fillColor: animal.color,
-          fillOpacity: 0.2,
-          weight: 2,
-        });
+        // Create circle with default radius if not provided
+        const areaLayer = L.circle(
+          [parseFloat(animal.latitude), parseFloat(animal.longitude)],
+          {
+            radius: animal.radius || 500, // Default radius of 500m if not provided
+            color: animal.color || getRandomColor(),
+            fillColor: animal.color || getRandomColor(),
+            fillOpacity: 0.2,
+            weight: 2,
+          }
+        );
+
         featureGroupRef.current.addLayer(areaLayer);
         setMapLayers((prev) => [...prev, marker, areaLayer]);
       });
@@ -372,14 +291,12 @@ function Map() {
     }
   };
 
-  // Call fetchExistingData in useEffect
   useEffect(() => {
     if (map) {
       fetchExistingData();
     }
   }, [map]);
 
-  // Modify handleDialogSubmit to include POST request
   const handleDialogSubmit = async ({
     info,
     markerType,
@@ -390,8 +307,6 @@ function Map() {
     if (addingAnimal && sightings?.length >= 3) {
       try {
         const animalData = JSON.parse(info);
-        animalData.images = images;
-        animalData.videos = videos;
         const validSightings = filterSightingsWithinRange(
           sightings,
           animalData.type
@@ -407,8 +322,41 @@ function Map() {
         const centerPoint = calculateCenter(validSightings);
         if (centerPoint) {
           const circleColor = getRandomColor();
+          const radius = calculateAdjustedRadius(
+            validSightings,
+            animalData.type
+          );
+
+          const newAnimalData = {
+            animalName: animalData.breed,
+            animalType: animalData.type,
+            incident: animalData.incidents,
+            healthStatus: animalData.healthStatus,
+            latitude: centerPoint.lat,
+            longitude: centerPoint.lng,
+          };
+
+          const response = await addAnimal(newAnimalData);
+          const savedAnimal = response.data.results[0];
+
+          if (images && images.length > 0) {
+            for (const image of images) {
+              const formData = new FormData();
+              formData.append("image", image);
+              await uploadImage(savedAnimal.id, formData);
+            }
+          }
+
+          const marker = L.marker([centerPoint.lat, centerPoint.lng], {
+            icon:
+              customMarkerIcons[animalData.type] || customMarkerIcons.default,
+          });
+          marker.info = JSON.stringify({ ...savedAnimal, ...animalData });
+          bindPopupToLayer(marker, marker.info);
+          featureGroupRef.current.addLayer(marker);
+
           const areaLayer = L.circle([centerPoint.lat, centerPoint.lng], {
-            radius: calculateAdjustedRadius(validSightings, animalData.type),
+            radius,
             color: circleColor,
             fillColor: circleColor,
             fillOpacity: 0.2,
@@ -416,111 +364,53 @@ function Map() {
           });
           featureGroupRef.current.addLayer(areaLayer);
 
-          let animalMarkerIcon = customMarkerIcons.default;
-          switch (animalData.type) {
-            case "dog":
-              animalMarkerIcon = customMarkerIcons.dog;
-              break;
-            case "cat":
-              animalMarkerIcon = customMarkerIcons.cat;
-              break;
-            case "other":
-            default:
-              animalMarkerIcon = customMarkerIcons.other;
-              break;
-          }
-
-          const marker = L.marker([centerPoint.lat, centerPoint.lng], {
-            icon: animalMarkerIcon,
-          });
-          marker.info = JSON.stringify(animalData);
-          bindPopupToLayer(marker, marker.info);
-          featureGroupRef.current.addLayer(marker);
-
           setMapLayers((prevLayers) => [...prevLayers, marker, areaLayer]);
-
-          // Send POST request to server
-          try {
-            const response = await fetch(
-              "https://your-server.com/api/animals",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  latitude: centerPoint.lat,
-                  longitude: centerPoint.lng,
-                  type: animalData.type,
-                  breed: animalData.breed,
-                  color: animalData.color,
-                  size: animalData.size,
-                  healthStatus: animalData.healthStatus,
-                  incidents: animalData.incidents,
-                  lastSeen: animalData.lastSeen,
-                  images: animalData.images,
-                  videos: animalData.videos,
-                  radius: calculateAdjustedRadius(
-                    validSightings,
-                    animalData.type
-                  ),
-                  color: circleColor,
-                }),
-              }
-            );
-
-            if (!response.ok) {
-              throw new Error("Failed to save animal data");
-            }
-
-            const savedAnimal = await response.json();
-            console.log("Animal data saved:", savedAnimal);
-          } catch (postError) {
-            console.error("Error saving animal data:", postError);
-          }
         }
-        setShowDialog(false);
       } catch (error) {
-        console.error("Error processing animal data:", error);
-        alert(
-          "There was an error processing the animal data. Please try again."
-        );
+        console.error("Error saving animal:", error);
+        alert("There was an error saving the animal. Please try again.");
       }
     } else if (activeLayer) {
-      if (activeLayer instanceof L.Marker && !isEdit) {
-        activeLayer.setIcon(customMarkerIcons[markerType]);
-      }
-      activeLayer.info = info;
-      bindPopupToLayer(activeLayer, info);
-      if (!isEdit) {
-        setMapLayers((prevLayers) => [...prevLayers, activeLayer]);
-      }
       try {
-        const response = await fetch(
-          `https://your-server.com/api/animals/${activeLayer.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: info,
-          }
-        );
+        const animalData = JSON.parse(info);
+        await updateAnimal(animalData.id, animalData);
 
-        if (!response.ok) {
-          throw new Error("Failed to update animal data");
+        if (activeLayer instanceof L.Marker && !isEdit) {
+          activeLayer.setIcon(customMarkerIcons[markerType]);
         }
+        activeLayer.info = info;
+        bindPopupToLayer(activeLayer, info);
 
-        const updatedAnimal = await response.json();
-        console.log("Animal data updated:", updatedAnimal);
-      } catch (updateError) {
-        console.error("Error updating animal data:", updateError);
+        if (!isEdit) {
+          setMapLayers((prevLayers) => [...prevLayers, activeLayer]);
+        }
+      } catch (error) {
+        console.error("Error updating animal:", error);
+        alert("There was an error updating the animal. Please try again.");
       }
-
-      setShowDialog(false);
     }
+
+    setShowDialog(false);
     setAddingAnimal(false);
     setTemporarySightings([]);
+  };
+
+  const handleDeleteAnimal = async (animalId) => {
+    try {
+      await deleteAnimal(animalId);
+      const layersToRemove = mapLayers.filter(
+        (layer) => layer.info && JSON.parse(layer.info).id === animalId
+      );
+      layersToRemove.forEach((layer) => {
+        featureGroupRef.current.removeLayer(layer);
+      });
+      setMapLayers((prev) =>
+        prev.filter((layer) => !layersToRemove.includes(layer))
+      );
+    } catch (error) {
+      console.error("Error deleting animal:", error);
+      alert("There was an error deleting the animal. Please try again.");
+    }
   };
 
   useEffect(() => {
@@ -532,12 +422,10 @@ function Map() {
           date: new Date().toISOString().split("T")[0],
         };
 
-        // Get the current animal type from the dialog
         const currentAnimalType = JSON.parse(
           activeLayer?.info || '{"type":"other"}'
         ).type;
 
-        // Check if the new sighting is within range of existing sightings
         if (
           temporarySightings.length > 0 &&
           !isWithinRange(newSighting, temporarySightings, currentAnimalType)
@@ -627,13 +515,11 @@ function Map() {
         },
         (error) => {
           console.error("Error getting geolocation:", error);
-          // Set default coordinates if needed
           setLatitude(0);
           setLongitude(0);
         }
       );
     } else {
-      // Geolocation not supported, set default coordinates
       setLatitude(0);
       setLongitude(0);
     }
@@ -684,8 +570,8 @@ function Map() {
       <MapContainer
         center={[latitude, longitude]}
         maxBounds={[
-          [-90, -180], // Southwest corner of the bounding box
-          [90, 180], // Northeast corner of the bounding box
+          [-90, -180],
+          [90, 180],
         ]}
         zoom={15}
         minZoom={2}
@@ -719,7 +605,7 @@ function Map() {
                 JSON.parse(activeLayer?.info || '{"type":"other"}').type
               )}
               pathOptions={{
-                color: getRandomColor(), // Assign random color
+                color: getRandomColor(),
                 fillColor: getRandomColor(),
                 fillOpacity: 0.2,
                 weight: 2,
@@ -735,7 +621,7 @@ function Map() {
           initialInfo={activeLayer?.info || ""}
           isEdit={isEdit}
           sightings={temporarySightings}
-          onStepChange={handleStepChange} // Added this line
+          onStepChange={handleStepChange}
         />
       )}
     </div>

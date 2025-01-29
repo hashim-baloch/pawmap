@@ -8,13 +8,16 @@ const animalRoutes = require("./API/routes/animals");
 const imageRoutes = require("./API/routes/images");
 
 const app = express();
+
+// Update CORS configuration to accept requests from both ports
 app.use(
   cors({
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PATCH", "DELETE"],
+    origin: ["http://localhost:5173", "http://localhost:5174"],
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
+
 app.use(bodyParser.json());
 
 app.use("/api/auth", authRoutes);
