@@ -256,8 +256,6 @@
 }
 
 /* Centering the Popup on the Screen */
-.leaflet-popup-content-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.leaflet-popup {
+  top: 100px !important;
 }
