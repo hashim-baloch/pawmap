@@ -110,7 +110,6 @@ const getRandomColor = () => {
 function Map() {
   const [map, setMap] = useState(null);
   const { animals, createAnimal, updateAnimal } = useAnimals();
-  const [mapLayers, setMapLayers] = useState([]);
   const [showDialog, setShowDialog] = useState(false);
   const [activeLayer, setActiveLayer] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
@@ -175,82 +174,6 @@ function Map() {
     });
   };
 
-  // const createPopupContent = (animalInfo) => {
-  //   try {
-  //     const info = JSON.parse(animalInfo);
-  //     return `
-  //     <div class="popup-content">
-  //     <div class="carousel">
-  //     <div class="carousel-slide">
-  //     <img src="${
-  //       info.coverImage || info.images[0]
-  //     }" alt="Cover Image" class="carousel-image"/>
-  //     <h4>${info.type.charAt(0).toUpperCase() + info.type.slice(1)} - ${
-  //       info.breed
-  //     }</h4>
-  //     <button class="edit-button">Edit</button>
-  //           </div>
-  //           <div class="carousel-slide">
-  //             <p><strong>Color:</strong> ${info.color}</p>
-  //             <p><strong>Size:</strong> ${info.size}</p>
-  //             <p><strong>Health Status:</strong> ${info.healthStatus}</p>
-  //             <p><strong>Last Seen:</strong> ${new Date(
-  //               info.lastSeen
-  //             ).toLocaleDateString()}</p>
-  //             ${
-  //               info.incidents
-  //                 ? `<p><strong>Notes:</strong> ${info.incidents}</p>`
-  //                 : ""
-  //             }
-  //           </div>
-  //           <div class="carousel-slide">
-  //             ${
-  //               info.images && info.images.length > 1
-  //                 ? `<div class="additional-images">
-  //                   ${info.images
-  //                     .slice(1)
-  //                     .map(
-  //                       (img) =>
-  //                         `<img src="${img}" alt="Additional Image" class="popup-image"/>`
-  //                     )
-  //                     .join("")}
-  //                 </div>`
-  //                 : ""
-  //             }
-  //             ${
-  //               info.videos && info.videos.length > 0
-  //                 ? `<div class="media-section">
-  //                   <h5>Videos:</h5>
-  //                   ${info.videos
-  //                     .map(
-  //                       (vid) =>
-  //                         `<video controls class="popup-video">
-  //                           <source src="${vid}" type="video/mp4">
-  //                           Your browser does not support the video tag.
-  //                         </video>`
-  //                     )
-  //                     .join("")}
-  //                 </div>`
-  //                 : ""
-  //             }
-  //           </div>
-  //           <div class="carousel-navigation">
-  //             <button class="prev-btn">&#10094;</button>
-  //             <button class="next-btn">&#10095;</button>
-  //           </div>
-  //         </div>
-  //       </div>
-  //     `;
-  //   } catch (error) {
-  //     console.error("Error parsing animal info:", error);
-  //     return `
-  //       <div class="popup-content">
-  //         <p>${animalInfo}</p>
-  //         <button class="edit-button">Edit</button>
-  //       </div>
-  //     `;
-  //   }
-  // };
   const createPopupContent = (animalInfo) => {
     try {
       const info = JSON.parse(animalInfo);
@@ -276,7 +199,7 @@ function Map() {
                   : placeholderImage
               }
               <h4>${info.type.charAt(0).toUpperCase() + info.type.slice(1)} - ${
-        info.breed
+        info.animalName
       }</h4>
               <button class="edit-button">Edit</button>
             </div>
@@ -341,470 +264,7 @@ function Map() {
       `;
     }
   };
-  // const bindPopupToLayer = useCallback(
-  //   (layer, info) => {
-  //     const popupContent = createPopupContent(info);
-  //     layer.bindPopup(popupContent);
 
-  //     layer.on("popupopen", () => {
-  //       const editButton = document.querySelector(".edit-button");
-  //       if (editButton) {
-  //         editButton.addEventListener("click", () => handleLayerClick(layer));
-  //       }
-
-  //       const slides = document.querySelectorAll(".carousel-slide");
-  //       const prevBtn = document.querySelector(".prev-btn");
-  //       const nextBtn = document.querySelector(".next-btn");
-  //       let currentSlide = 0;
-  //       if (slides.length > 0) {
-  //         slides.forEach((slide, index) => {
-  //           slide.classList.remove("active");
-  //           if (index === 0) {
-  //             slide.classList.add("active");
-  //           }
-  //         });
-  //       }
-  //       const showSlide = (index) => {
-  //         slides.forEach((slide) => slide.classList.remove("active"));
-  //         if (slides[index]) {
-  //           slides[index].classList.add("active");
-  //         }
-  //       };
-  //       const showNextSlide = () => {
-  //         currentSlide = (currentSlide + 1) % slides.length;
-  //         showSlide(currentSlide);
-  //       };
-  //       const showPrevSlide = () => {
-  //         currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-  //         showSlide(currentSlide);
-  //       };
-  //       if (nextBtn && slides.length > 1) {
-  //         nextBtn.addEventListener("click", showNextSlide);
-  //       }
-  //       if (prevBtn && slides.length > 1) {
-  //         prevBtn.addEventListener("click", showPrevSlide);
-  //       }
-
-  //       const popup = layer.getPopup();
-  //       if (popup) {
-  //         popup.once("open", () => {
-  //           const popupContainer = document.querySelector(
-  //             ".leaflet-popup-content-wrapper"
-  //           );
-  //           if (popupContainer) {
-  //             popupContainer.style.display = "flex";
-  //             popupContainer.style.justifyContent = "center";
-  //             popupContainer.style.alignItems = "center";
-  //           }
-  //         });
-  //       }
-
-  //       layer.on("popupclose", () => {
-  //         if (prevBtn) {
-  //           prevBtn.removeEventListener("click", showPrevSlide);
-  //         }
-  //         if (nextBtn) {
-  //           nextBtn.removeEventListener("click", showNextSlide);
-  //         }
-  //       });
-  //     });
-  //   },
-  //   [handleLayerClick]
-  // );
-
-  // useEffect(() => {
-  //   if (!map || !featureGroupRef.current) return;
-
-  //   featureGroupRef.current.clearLayers();
-
-  //   animals.forEach((animal) => {
-  //     const validRadius = Number.isFinite(animal.radius) ? animal.radius : 1000;
-
-  //     const frontendAnimalData = {
-  //       id: animal.id,
-  //       type: animal.animal_type,
-  //       breed: animal.breed || animal.animal_name,
-  //       color: animal.color,
-  //       size: animal.size,
-  //       healthStatus: animal.health_status,
-  //       incidents: animal.incident,
-  //       lastSeen: animal.last_seen,
-  //       images: [],
-  //       videos: [],
-  //     };
-
-  //     const marker = L.marker([animal.latitude, animal.longitude], {
-  //       icon:
-  //         customMarkerIcons[animal.animal_type] || customMarkerIcons.default,
-  //     });
-
-  //     marker.id = animal.id;
-  //     marker.info = JSON.stringify(frontendAnimalData);
-  //     bindPopupToLayer(marker, marker.info);
-  //     featureGroupRef.current.addLayer(marker);
-
-  //     const areaLayer = L.circle([animal.latitude, animal.longitude], {
-  //       radius: validRadius,
-  //       color: animal.color_code || getRandomColor(),
-  //       fillColor: animal.color_code || getRandomColor(),
-  //       fillOpacity: 0.2,
-  //       weight: 2,
-  //     });
-  //     featureGroupRef.current.addLayer(areaLayer);
-  //   });
-  // }, [animals, map, bindPopupToLayer]);
-  // Update the useEffect for rendering animals
-  // useEffect(() => {
-  //   if (!map || !featureGroupRef.current) return;
-
-  //   featureGroupRef.current.clearLayers();
-
-  //   animals.forEach((animal) => {
-  //     // // Ensure we have valid coordinates
-  //     // if (
-  //     //   !Number.isFinite(animal.latitude) ||
-  //     //   !Number.isFinite(animal.longitude)
-  //     // ) {
-  //     //   console.error("Invalid coordinates for animal:", animal);
-  //     //   return;
-  //     // }
-
-  //     const validRadius = Number.isFinite(animal.radius) ? animal.radius : 1000;
-  //     const position = [animal.latitude, animal.longitude];
-
-  //     const frontendAnimalData = {
-  //       id: animal.id,
-  //       type: animal.animal_type,
-  //       breed: animal.breed || animal.animal_name,
-  //       color: animal.color,
-  //       size: animal.size,
-  //       healthStatus: animal.health_status,
-  //       incidents: animal.incident,
-  //       lastSeen: animal.last_seen,
-  //       images: [],
-  //       videos: [],
-  //     };
-
-  //     // Create marker with correct position
-  //     const marker = L.marker(position, {
-  //       icon:
-  //         customMarkerIcons[animal.animal_type] || customMarkerIcons.default,
-  //     });
-
-  //     marker.id = animal.id;
-  //     marker.info = JSON.stringify(frontendAnimalData);
-
-  //     // Create popup with offset to prevent overlap with marker
-  //     const popup = L.popup({
-  //       offset: [0, -20],
-  //       maxWidth: 400,
-  //       minWidth: 300,
-  //       autoPan: true,
-  //       autoPanPadding: [50, 50],
-  //     });
-
-  //     // Set popup content and bind to marker
-  //     popup.setContent(createPopupContent(marker.info));
-  //     marker.bindPopup(popup);
-
-  //     // Add marker event listeners
-  //     marker.on("popupopen", () => {
-  //       const editButton = document.querySelector(".edit-button");
-  //       if (editButton) {
-  //         editButton.addEventListener("click", () => handleLayerClick(marker));
-  //       }
-
-  //       // Handle carousel functionality
-  //       const slides = document.querySelectorAll(".carousel-slide");
-  //       const prevBtn = document.querySelector(".prev-btn");
-  //       const nextBtn = document.querySelector(".next-btn");
-
-  //       if (slides.length > 0) {
-  //         let currentSlide = 0;
-  //         const showSlide = (index) => {
-  //           slides.forEach((slide) => slide.classList.remove("active"));
-  //           slides[index].classList.add("active");
-  //         };
-
-  //         if (prevBtn && nextBtn) {
-  //           prevBtn.onclick = () => {
-  //             currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-  //             showSlide(currentSlide);
-  //           };
-
-  //           nextBtn.onclick = () => {
-  //             currentSlide = (currentSlide + 1) % slides.length;
-  //             showSlide(currentSlide);
-  //           };
-  //         }
-  //       }
-  //     });
-
-  //     featureGroupRef.current.addLayer(marker);
-
-  //     // Create and add the circle
-  //     const areaLayer = L.circle(position, {
-  //       radius: validRadius,
-  //       color: animal.color_code || getRandomColor(),
-  //       fillColor: animal.color_code || getRandomColor(),
-  //       fillOpacity: 0.2,
-  //       weight: 2,
-  //     });
-
-  //     featureGroupRef.current.addLayer(areaLayer);
-  //   });
-  // }, [animals, map, handleLayerClick]);
-  // const handleDialogSubmit = async ({
-  //   info,
-  //   markerType,
-  //   sightings,
-  //   images,
-  //   videos,
-  // }) => {
-  //   if (addingAnimal && sightings?.length >= 3) {
-  //     try {
-  //       const animalData = JSON.parse(info);
-  //       const validSightings = filterSightingsWithinRange(
-  //         sightings,
-  //         animalData.type
-  //       );
-
-  //       if (validSightings.length < 3) {
-  //         alert(
-  //           "Some sightings were too far apart for this type of animal. Please add sightings closer together."
-  //         );
-  //         return;
-  //       }
-
-  //       const centerPoint = calculateCenter(validSightings);
-  //       if (centerPoint) {
-  //         const circleColor = getRandomColor();
-  //         const radius = calculateAdjustedRadius(
-  //           validSightings,
-  //           animalData.type
-  //         );
-
-  //         const postData = {
-  //           animalName: animalData.breed || "Unknown",
-  //           animalType: animalData.type,
-  //           breed: animalData.breed,
-  //           color: animalData.color,
-  //           size: animalData.size,
-  //           healthStatus: animalData.healthStatus,
-  //           incident: animalData.incidents || "",
-  //           lastSeen: animalData.lastSeen,
-  //           latitude: centerPoint.lat,
-  //           longitude: centerPoint.lng,
-  //           radius: radius,
-  //           colorCode: circleColor,
-  //         };
-
-  //         const newAnimal = await createAnimal(postData);
-
-  //         const marker = L.marker([newAnimal.latitude, newAnimal.longitude], {
-  //           icon:
-  //             customMarkerIcons[newAnimal.animal_type] ||
-  //             customMarkerIcons.default,
-  //         });
-
-  //         const frontendAnimalData = {
-  //           id: newAnimal.id,
-  //           type: newAnimal.animal_type,
-  //           breed: newAnimal.breed,
-  //           color: newAnimal.color,
-  //           size: newAnimal.size,
-  //           healthStatus: newAnimal.health_status,
-  //           incidents: newAnimal.incident,
-  //           lastSeen: newAnimal.last_seen,
-  //           images: images || [],
-  //           videos: videos || [],
-  //         };
-
-  //         marker.id = newAnimal.id;
-  //         marker.info = JSON.stringify(frontendAnimalData);
-  //         bindPopupToLayer(marker, marker.info);
-  //         featureGroupRef.current.addLayer(marker);
-
-  //         const areaLayer = L.circle(
-  //           [newAnimal.latitude, newAnimal.longitude],
-  //           {
-  //             radius: newAnimal.radius,
-  //             color: newAnimal.color_code,
-  //             fillColor: newAnimal.color_code,
-  //             fillOpacity: 0.2,
-  //             weight: 2,
-  //           }
-  //         );
-  //         featureGroupRef.current.addLayer(areaLayer);
-  //       }
-  //       setShowDialog(false);
-  //     } catch (error) {
-  //       console.error("Error processing animal data:", error);
-  //       alert(
-  //         "There was an error processing the animal data. Please try again."
-  //       );
-  //     }
-  //   } else if (activeLayer) {
-  //     try {
-  //       const updatedData = JSON.parse(info);
-  //       const updatePayload = {
-  //         animalType: updatedData.type,
-  //         breed: updatedData.breed,
-  //         color: updatedData.color,
-  //         size: updatedData.size,
-  //         healthStatus: updatedData.healthStatus,
-  //         incident: updatedData.incidents,
-  //         lastSeen: updatedData.lastSeen,
-  //       };
-
-  //       await updateAnimal(activeLayer.id, updatePayload);
-
-  //       if (activeLayer instanceof L.Marker) {
-  //         activeLayer.setIcon(
-  //           customMarkerIcons[updatedData.type] || customMarkerIcons.default
-  //         );
-  //       }
-  //       activeLayer.info = info;
-  //       bindPopupToLayer(activeLayer, info);
-  //     } catch (error) {
-  //       console.error("Error updating animal:", error);
-  //       alert("Failed to update animal information. Please try again.");
-  //     }
-  //     setShowDialog(false);
-  //   }
-  //   setAddingAnimal(false);
-  //   setTemporarySightings([]);
-  // };
-  // const handleDialogSubmit = async ({
-  //   info,
-  //   markerType,
-  //   sightings,
-  //   images,
-  //   videos,
-  // }) => {
-  //   if (addingAnimal && sightings?.length >= 3) {
-  //     try {
-  //       const animalData = JSON.parse(info);
-  //       const validSightings = filterSightingsWithinRange(
-  //         sightings,
-  //         animalData.type
-  //       );
-
-  //       if (validSightings.length < 3) {
-  //         alert(
-  //           "Some sightings were too far apart for this type of animal. Please add sightings closer together."
-  //         );
-  //         return;
-  //       }
-
-  //       const centerPoint = calculateCenter(validSightings);
-  //       if (centerPoint) {
-  //         const circleColor = getRandomColor();
-  //         // Calculate radius based on actual sightings
-  //         const radius = calculateAdjustedRadius(
-  //           validSightings,
-  //           animalData.type
-  //         );
-
-  //         const postData = {
-  //           animalName: animalData.breed || "Unknown",
-  //           animalType: animalData.type,
-  //           breed: animalData.breed,
-  //           color: animalData.color,
-  //           size: animalData.size,
-  //           healthStatus: animalData.healthStatus,
-  //           incident: animalData.incidents || "",
-  //           lastSeen: animalData.lastSeen,
-  //           latitude: centerPoint.lat,
-  //           longitude: centerPoint.lng,
-  //           radius: radius, // Use calculated radius
-  //           colorCode: circleColor,
-  //         };
-
-  //         const newAnimal = await createAnimal(postData);
-
-  //         // Parse coordinates to numbers
-  //         const lat = parseFloat(newAnimal.latitude);
-  //         const lng = parseFloat(newAnimal.longitude);
-  //         const validRadius = parseFloat(newAnimal.radius);
-
-  //         if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-  //           console.error("Invalid coordinates for new animal:", newAnimal);
-  //           return;
-  //         }
-
-  //         const position = [lat, lng];
-  //         const marker = L.marker(position, {
-  //           icon:
-  //             customMarkerIcons[newAnimal.animal_type] ||
-  //             customMarkerIcons.default,
-  //         });
-
-  //         const frontendAnimalData = {
-  //           id: newAnimal.id,
-  //           type: newAnimal.animal_type,
-  //           breed: newAnimal.breed,
-  //           color: newAnimal.color,
-  //           size: newAnimal.size,
-  //           healthStatus: newAnimal.health_status,
-  //           incidents: newAnimal.incident,
-  //           lastSeen: newAnimal.last_seen,
-  //           images: images || [],
-  //           videos: videos || [],
-  //         };
-
-  //         marker.id = newAnimal.id;
-  //         marker.info = JSON.stringify(frontendAnimalData);
-  //         bindPopupToLayer(marker, marker.info);
-  //         featureGroupRef.current.addLayer(marker);
-
-  //         const areaLayer = L.circle(position, {
-  //           radius: validRadius,
-  //           color: newAnimal.color_code,
-  //           fillColor: newAnimal.color_code,
-  //           fillOpacity: 0.2,
-  //           weight: 2,
-  //         });
-  //         featureGroupRef.current.addLayer(areaLayer);
-  //       }
-  //       setShowDialog(false);
-  //     } catch (error) {
-  //       console.error("Error processing animal data:", error);
-  //       alert(
-  //         "There was an error processing the animal data. Please try again."
-  //       );
-  //     }
-  //   } else if (activeLayer) {
-  //     try {
-  //       const updatedData = JSON.parse(info);
-  //       const updatePayload = {
-  //         animalType: updatedData.type,
-  //         breed: updatedData.breed,
-  //         color: updatedData.color,
-  //         size: updatedData.size,
-  //         healthStatus: updatedData.healthStatus,
-  //         incident: updatedData.incidents,
-  //         lastSeen: updatedData.lastSeen,
-  //       };
-
-  //       await updateAnimal(activeLayer.id, updatePayload);
-
-  //       if (activeLayer instanceof L.Marker) {
-  //         activeLayer.setIcon(
-  //           customMarkerIcons[updatedData.type] || customMarkerIcons.default
-  //         );
-  //       }
-  //       activeLayer.info = info;
-  //       bindPopupToLayer(activeLayer, info);
-  //     } catch (error) {
-  //       console.error("Error updating animal:", error);
-  //       alert("Failed to update animal information. Please try again.");
-  //     }
-  //     setShowDialog(false);
-  //   }
-  //   setAddingAnimal(false);
-  //   setTemporarySightings([]);
-  // };
   const bindPopupToLayer = useCallback(
     (layer, info) => {
       const popupContent = createPopupContent(info);
@@ -900,7 +360,7 @@ function Map() {
       const frontendAnimalData = {
         id: animal.id,
         type: animal.animal_type,
-        breed: animal.breed || animal.animal_name,
+        animalName: animal.animal_name,
         color: animal.color,
         size: animal.size,
         healthStatus: animal.health_status,
@@ -933,7 +393,7 @@ function Map() {
 
   const handleDialogSubmit = async ({
     info,
-    markerType,
+
     sightings,
     images,
     videos,
@@ -963,9 +423,8 @@ function Map() {
           );
 
           const postData = {
-            animalName: animalData.breed || "Unknown",
+            animalName: animalData.animalName, // Updated from breed
             animalType: animalData.type,
-            breed: animalData.breed,
             color: animalData.color,
             size: animalData.size,
             healthStatus: animalData.healthStatus,
@@ -1003,7 +462,7 @@ function Map() {
           const frontendAnimalData = {
             id: newAnimal.id,
             type: newAnimal.animal_type,
-            breed: newAnimal.breed,
+            animalName: newAnimal.animal_name,
             color: newAnimal.color,
             size: newAnimal.size,
             healthStatus: newAnimal.health_status,
@@ -1039,7 +498,7 @@ function Map() {
         const updatedData = JSON.parse(info);
         const updatePayload = {
           animalType: updatedData.type,
-          breed: updatedData.breed,
+          animalName: updatedData.animalName,
           color: updatedData.color,
           size: updatedData.size,
           healthStatus: updatedData.healthStatus,

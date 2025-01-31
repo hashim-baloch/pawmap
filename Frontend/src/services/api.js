@@ -1,12 +1,9 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5003/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // Add request interceptor to include token
@@ -22,25 +19,68 @@ api.interceptors.request.use((config) => {
 export const register = (userData) => api.post("/auth/register", userData);
 export const login = (credentials) => api.post("/auth/login", credentials);
 
-// Animal endpoints
+// Animal endpoints with updated file handling
 export const getAllAnimals = () => api.get("/animals/get/all");
 export const getAnimalById = (id) => api.get(`/animals/get/${id}`);
-export const addAnimal = (animalData) =>
-  api.post("/animals/add-animal", animalData);
-export const updateAnimal = (id, animalData) =>
-  api.patch(`/animals/${id}/update`, animalData);
-export const deleteAnimal = (id) => api.delete(`/animals/found/${id}`);
 
-// Image endpoints
-export const uploadImage = (animalId, formData) => {
-  const config = {
+export const addAnimal = (animalData) => {
+  const formData = new FormData();
+
+  // Add all regular fields except 'breed'
+  Object.keys(animalData).forEach((key) => {
+    if (key !== "assets" && key !== "breed") {
+      // Removed 'breed'
+      if (key === "animalName") {
+        formData.append("animalName", animalData[key]);
+      } else {
+        formData.append(key, animalData[key]);
+      }
+    }
+  });
+
+  // Add files
+  if (animalData.assets) {
+    animalData.assets.forEach((file) => {
+      formData.append("assets", file);
+    });
+  }
+
+  return api.post("/animals/add-animal", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
-  };
-  return api.post(`/images/${animalId}/upload`, formData, config);
+  });
 };
-export const getImages = (animalId) => api.get(`/images/${animalId}/get-all`);
-export const deleteImage = (imageId) => api.delete(`/images/delete/${imageId}`);
+
+export const updateAnimal = (id, animalData) => {
+  const formData = new FormData();
+
+  // Add all regular fields except 'breed'
+  Object.keys(animalData).forEach((key) => {
+    if (key !== "assets" && key !== "breed") {
+      // Removed 'breed'
+      if (key === "animalName") {
+        formData.append("animalName", animalData[key]);
+      } else {
+        formData.append(key, animalData[key]);
+      }
+    }
+  });
+
+  // Add files
+  if (animalData.assets) {
+    animalData.assets.forEach((file) => {
+      formData.append("assets", file);
+    });
+  }
+
+  return api.patch(`/animals/${id}/update`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+
+export const deleteAnimal = (id) => api.delete(`/animals/found/${id}`);
 
 export default api;

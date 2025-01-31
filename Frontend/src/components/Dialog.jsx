@@ -12,15 +12,14 @@ function Dialog({
   const [step, setStep] = useState(1);
   const [animalInfo, setAnimalInfo] = useState({
     type: "",
-    breed: "",
+    animalName: "", // Using 'animalName' exclusively
     color: "",
     size: "medium",
     healthStatus: "healthy",
     sightings: [],
     incidents: "",
     lastSeen: new Date().toISOString().split("T")[0],
-    images: [],
-    videos: [],
+    assets: [],
   });
 
   useEffect(() => {
@@ -57,8 +56,7 @@ function Dialog({
         info,
         markerType: getMarkerType(animalInfo.healthStatus),
         sightings: animalInfo.sightings,
-        images: animalInfo.images,
-        videos: animalInfo.videos,
+        assets: animalInfo.assets,
       });
     }
   };
@@ -75,12 +73,11 @@ function Dialog({
     }
   };
 
-  const handleFileChange = (e, type) => {
+  const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    const urls = files.map((file) => URL.createObjectURL(file));
     setAnimalInfo((prev) => ({
       ...prev,
-      [type]: [...prev[type], ...urls],
+      assets: files,
     }));
   };
 
@@ -106,12 +103,15 @@ function Dialog({
               </select>
             </div>
             <div className="form-group">
-              <label>Breed/Description:</label>
+              <label>Animal Name/Description:</label> {/* Updated label */}
               <input
                 type="text"
-                value={animalInfo.breed}
+                value={animalInfo.animalName} // Using 'animalName' exclusively
                 onChange={(e) =>
-                  setAnimalInfo((prev) => ({ ...prev, breed: e.target.value }))
+                  setAnimalInfo((prev) => ({
+                    ...prev,
+                    animalName: e.target.value,
+                  }))
                 }
                 placeholder="E.g., Mixed breed, Tabby cat"
               />
@@ -191,21 +191,12 @@ function Dialog({
               />
             </div>
             <div className="form-group">
-              <label>Upload Images:</label>
+              <label>Upload Assets (Images/Videos):</label>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 multiple
-                onChange={(e) => handleFileChange(e, "images")}
-              />
-            </div>
-            <div className="form-group">
-              <label>Upload Videos:</label>
-              <input
-                type="file"
-                accept="video/*"
-                multiple
-                onChange={(e) => handleFileChange(e, "videos")}
+                onChange={handleFileChange}
               />
             </div>
           </>
