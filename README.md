@@ -6,6 +6,9 @@
 
 PawMap is a community-driven platform designed to help stray animals by allowing users to add animals, update their information, upload pictures, and track their health status. While future plans include mapping locations, connecting volunteers with shelters and vets, and offering more insights, the current focus is on building the core functionality.
 
+> Important: API is http based right now, so most browsers won't work for it now. I am working to add a proxy to make it https but until then bear with me. You can always just use Postman to do that asw :)
+> `http://hackclub.app:5003/api/animals/get/all`
+
 ## 🚀 Features
 
 ### 🐾 Current Capabilities
