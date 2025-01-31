@@ -175,20 +175,110 @@ function Map() {
     });
   };
 
+  // const createPopupContent = (animalInfo) => {
+  //   try {
+  //     const info = JSON.parse(animalInfo);
+  //     return `
+  //     <div class="popup-content">
+  //     <div class="carousel">
+  //     <div class="carousel-slide">
+  //     <img src="${
+  //       info.coverImage || info.images[0]
+  //     }" alt="Cover Image" class="carousel-image"/>
+  //     <h4>${info.type.charAt(0).toUpperCase() + info.type.slice(1)} - ${
+  //       info.breed
+  //     }</h4>
+  //     <button class="edit-button">Edit</button>
+  //           </div>
+  //           <div class="carousel-slide">
+  //             <p><strong>Color:</strong> ${info.color}</p>
+  //             <p><strong>Size:</strong> ${info.size}</p>
+  //             <p><strong>Health Status:</strong> ${info.healthStatus}</p>
+  //             <p><strong>Last Seen:</strong> ${new Date(
+  //               info.lastSeen
+  //             ).toLocaleDateString()}</p>
+  //             ${
+  //               info.incidents
+  //                 ? `<p><strong>Notes:</strong> ${info.incidents}</p>`
+  //                 : ""
+  //             }
+  //           </div>
+  //           <div class="carousel-slide">
+  //             ${
+  //               info.images && info.images.length > 1
+  //                 ? `<div class="additional-images">
+  //                   ${info.images
+  //                     .slice(1)
+  //                     .map(
+  //                       (img) =>
+  //                         `<img src="${img}" alt="Additional Image" class="popup-image"/>`
+  //                     )
+  //                     .join("")}
+  //                 </div>`
+  //                 : ""
+  //             }
+  //             ${
+  //               info.videos && info.videos.length > 0
+  //                 ? `<div class="media-section">
+  //                   <h5>Videos:</h5>
+  //                   ${info.videos
+  //                     .map(
+  //                       (vid) =>
+  //                         `<video controls class="popup-video">
+  //                           <source src="${vid}" type="video/mp4">
+  //                           Your browser does not support the video tag.
+  //                         </video>`
+  //                     )
+  //                     .join("")}
+  //                 </div>`
+  //                 : ""
+  //             }
+  //           </div>
+  //           <div class="carousel-navigation">
+  //             <button class="prev-btn">&#10094;</button>
+  //             <button class="next-btn">&#10095;</button>
+  //           </div>
+  //         </div>
+  //       </div>
+  //     `;
+  //   } catch (error) {
+  //     console.error("Error parsing animal info:", error);
+  //     return `
+  //       <div class="popup-content">
+  //         <p>${animalInfo}</p>
+  //         <button class="edit-button">Edit</button>
+  //       </div>
+  //     `;
+  //   }
+  // };
   const createPopupContent = (animalInfo) => {
     try {
       const info = JSON.parse(animalInfo);
+      const placeholderImage = `
+        <div class="popup-image-placeholder">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </div>
+      `;
+
       return `
-      <div class="popup-content">
-      <div class="carousel">
-      <div class="carousel-slide">
-      <img src="${
-        info.coverImage || info.images[0]
-      }" alt="Cover Image" class="carousel-image"/>
-      <h4>${info.type.charAt(0).toUpperCase() + info.type.slice(1)} - ${
+        <div class="popup-content">
+          <div class="carousel">
+            <div class="carousel-slide">
+              ${
+                info.coverImage || info.images[0]
+                  ? `<img src="${
+                      info.coverImage || info.images[0]
+                    }" alt="Cover Image" class="carousel-image"/>`
+                  : placeholderImage
+              }
+              <h4>${info.type.charAt(0).toUpperCase() + info.type.slice(1)} - ${
         info.breed
       }</h4>
-      <button class="edit-button">Edit</button>
+              <button class="edit-button">Edit</button>
             </div>
             <div class="carousel-slide">
               <p><strong>Color:</strong> ${info.color}</p>
@@ -215,7 +305,7 @@ function Map() {
                       )
                       .join("")}
                   </div>`
-                  : ""
+                  : placeholderImage
               }
               ${
                 info.videos && info.videos.length > 0
@@ -223,11 +313,11 @@ function Map() {
                     <h5>Videos:</h5>
                     ${info.videos
                       .map(
-                        (vid) =>
-                          `<video controls class="popup-video">
-                            <source src="${vid}" type="video/mp4">
-                            Your browser does not support the video tag.
-                          </video>`
+                        (vid) => `
+                        <video controls class="popup-video">
+                          <source src="${vid}" type="video/mp4">
+                          Your browser does not support the video tag.
+                        </video>`
                       )
                       .join("")}
                   </div>`
@@ -251,77 +341,76 @@ function Map() {
       `;
     }
   };
+  // const bindPopupToLayer = useCallback(
+  //   (layer, info) => {
+  //     const popupContent = createPopupContent(info);
+  //     layer.bindPopup(popupContent);
 
-  const bindPopupToLayer = useCallback(
-    (layer, info) => {
-      const popupContent = createPopupContent(info);
-      layer.bindPopup(popupContent);
+  //     layer.on("popupopen", () => {
+  //       const editButton = document.querySelector(".edit-button");
+  //       if (editButton) {
+  //         editButton.addEventListener("click", () => handleLayerClick(layer));
+  //       }
 
-      layer.on("popupopen", () => {
-        const editButton = document.querySelector(".edit-button");
-        if (editButton) {
-          editButton.addEventListener("click", () => handleLayerClick(layer));
-        }
+  //       const slides = document.querySelectorAll(".carousel-slide");
+  //       const prevBtn = document.querySelector(".prev-btn");
+  //       const nextBtn = document.querySelector(".next-btn");
+  //       let currentSlide = 0;
+  //       if (slides.length > 0) {
+  //         slides.forEach((slide, index) => {
+  //           slide.classList.remove("active");
+  //           if (index === 0) {
+  //             slide.classList.add("active");
+  //           }
+  //         });
+  //       }
+  //       const showSlide = (index) => {
+  //         slides.forEach((slide) => slide.classList.remove("active"));
+  //         if (slides[index]) {
+  //           slides[index].classList.add("active");
+  //         }
+  //       };
+  //       const showNextSlide = () => {
+  //         currentSlide = (currentSlide + 1) % slides.length;
+  //         showSlide(currentSlide);
+  //       };
+  //       const showPrevSlide = () => {
+  //         currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+  //         showSlide(currentSlide);
+  //       };
+  //       if (nextBtn && slides.length > 1) {
+  //         nextBtn.addEventListener("click", showNextSlide);
+  //       }
+  //       if (prevBtn && slides.length > 1) {
+  //         prevBtn.addEventListener("click", showPrevSlide);
+  //       }
 
-        const slides = document.querySelectorAll(".carousel-slide");
-        const prevBtn = document.querySelector(".prev-btn");
-        const nextBtn = document.querySelector(".next-btn");
-        let currentSlide = 0;
-        if (slides.length > 0) {
-          slides.forEach((slide, index) => {
-            slide.classList.remove("active");
-            if (index === 0) {
-              slide.classList.add("active");
-            }
-          });
-        }
-        const showSlide = (index) => {
-          slides.forEach((slide) => slide.classList.remove("active"));
-          if (slides[index]) {
-            slides[index].classList.add("active");
-          }
-        };
-        const showNextSlide = () => {
-          currentSlide = (currentSlide + 1) % slides.length;
-          showSlide(currentSlide);
-        };
-        const showPrevSlide = () => {
-          currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-          showSlide(currentSlide);
-        };
-        if (nextBtn && slides.length > 1) {
-          nextBtn.addEventListener("click", showNextSlide);
-        }
-        if (prevBtn && slides.length > 1) {
-          prevBtn.addEventListener("click", showPrevSlide);
-        }
+  //       const popup = layer.getPopup();
+  //       if (popup) {
+  //         popup.once("open", () => {
+  //           const popupContainer = document.querySelector(
+  //             ".leaflet-popup-content-wrapper"
+  //           );
+  //           if (popupContainer) {
+  //             popupContainer.style.display = "flex";
+  //             popupContainer.style.justifyContent = "center";
+  //             popupContainer.style.alignItems = "center";
+  //           }
+  //         });
+  //       }
 
-        const popup = layer.getPopup();
-        if (popup) {
-          popup.once("open", () => {
-            const popupContainer = document.querySelector(
-              ".leaflet-popup-content-wrapper"
-            );
-            if (popupContainer) {
-              popupContainer.style.display = "flex";
-              popupContainer.style.justifyContent = "center";
-              popupContainer.style.alignItems = "center";
-            }
-          });
-        }
-
-        layer.on("popupclose", () => {
-          if (prevBtn) {
-            prevBtn.removeEventListener("click", showPrevSlide);
-          }
-          if (nextBtn) {
-            nextBtn.removeEventListener("click", showNextSlide);
-          }
-        });
-      });
-    },
-    [handleLayerClick]
-  );
+  //       layer.on("popupclose", () => {
+  //         if (prevBtn) {
+  //           prevBtn.removeEventListener("click", showPrevSlide);
+  //         }
+  //         if (nextBtn) {
+  //           nextBtn.removeEventListener("click", showNextSlide);
+  //         }
+  //       });
+  //     });
+  //   },
+  //   [handleLayerClick]
+  // );
 
   // useEffect(() => {
   //   if (!map || !featureGroupRef.current) return;
@@ -716,6 +805,75 @@ function Map() {
   //   setAddingAnimal(false);
   //   setTemporarySightings([]);
   // };
+  const bindPopupToLayer = useCallback(
+    (layer, info) => {
+      const popupContent = createPopupContent(info);
+      const popup = L.popup({
+        autoPan: true,
+        autoPanPadding: [50, 50],
+        keepInView: true,
+        offset: [0, -10],
+      });
+
+      popup.setContent(popupContent);
+      layer.bindPopup(popup);
+
+      layer.on("popupopen", () => {
+        const editButton = document.querySelector(".edit-button");
+        if (editButton) {
+          editButton.addEventListener("click", () => handleLayerClick(layer));
+        }
+
+        const slides = document.querySelectorAll(".carousel-slide");
+        const prevBtn = document.querySelector(".prev-btn");
+        const nextBtn = document.querySelector(".next-btn");
+        let currentSlide = 0;
+
+        if (slides.length > 0) {
+          slides.forEach((slide, index) => {
+            slide.classList.remove("active");
+            if (index === 0) {
+              slide.classList.add("active");
+            }
+          });
+        }
+
+        const showSlide = (index) => {
+          slides.forEach((slide) => slide.classList.remove("active"));
+          if (slides[index]) {
+            slides[index].classList.add("active");
+          }
+        };
+
+        const showNextSlide = () => {
+          currentSlide = (currentSlide + 1) % slides.length;
+          showSlide(currentSlide);
+        };
+
+        const showPrevSlide = () => {
+          currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+          showSlide(currentSlide);
+        };
+
+        if (nextBtn && slides.length > 1) {
+          nextBtn.addEventListener("click", showNextSlide);
+        }
+        if (prevBtn && slides.length > 1) {
+          prevBtn.addEventListener("click", showPrevSlide);
+        }
+
+        layer.on("popupclose", () => {
+          if (prevBtn) {
+            prevBtn.removeEventListener("click", showPrevSlide);
+          }
+          if (nextBtn) {
+            nextBtn.removeEventListener("click", showNextSlide);
+          }
+        });
+      });
+    },
+    [handleLayerClick]
+  );
 
   useEffect(() => {
     if (!map || !featureGroupRef.current) return;
