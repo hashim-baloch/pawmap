@@ -71,24 +71,22 @@ const customMarkerIcons = {
   }),
   dog: new L.Icon({
     iconUrl: "https://cloud-qrwl9nfph-hack-club-bot.vercel.app/0dog__1_.svg",
-    iconSize: [34, 30], // Icon width and height
-    iconAnchor: [17, 30], // Center the anchor at the bottom of the icon
-    popupAnchor: [0, -25], // Position popup above the icon
+    iconSize: [34, 30],
+    iconAnchor: [17, 30],
+    popupAnchor: [0, -25],
     shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-    shadowSize: [36, 30], // Shadow matches icon size proportionally
-    shadowAnchor: [15, 30], // Align shadow with the base of the icon
+    shadowSize: [36, 30],
+    shadowAnchor: [15, 30],
   }),
-
   cat: new L.Icon({
     iconUrl: "https://cloud-qrwl9nfph-hack-club-bot.vercel.app/1cat__1_.svg",
-    iconSize: [39, 30], // Icon width and height
-    iconAnchor: [19, 30], // Center the anchor at the bottom of the icon
-    popupAnchor: [0, -25], // Position popup above the icon
+    iconSize: [39, 30],
+    iconAnchor: [19, 30],
+    popupAnchor: [0, -25],
     shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-    shadowSize: [41, 31], // Shadow matches icon size proportionally
-    shadowAnchor: [18, 30], // Align shadow with the base of the icon
+    shadowSize: [41, 31],
+    shadowAnchor: [18, 30],
   }),
-
   other: new L.Icon({
     iconUrl:
       "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
@@ -100,7 +98,6 @@ const customMarkerIcons = {
   }),
 };
 
-// Function to generate a random color in HEX format
 const getRandomColor = () => {
   const letters = "0123456789ABCDEF";
   let color = "#";
@@ -113,8 +110,6 @@ const getRandomColor = () => {
 function Map() {
   const [map, setMap] = useState(null);
   const { animals, createAnimal, updateAnimal } = useAnimals();
-
-  // eslint-disable-next-line no-unused-vars
   const [mapLayers, setMapLayers] = useState([]);
   const [showDialog, setShowDialog] = useState(false);
   const [activeLayer, setActiveLayer] = useState(null);
@@ -256,6 +251,7 @@ function Map() {
       `;
     }
   };
+
   const bindPopupToLayer = useCallback(
     (layer, info) => {
       const popupContent = createPopupContent(info);
@@ -267,7 +263,6 @@ function Map() {
           editButton.addEventListener("click", () => handleLayerClick(layer));
         }
 
-        // Initialize Carousel
         const slides = document.querySelectorAll(".carousel-slide");
         const prevBtn = document.querySelector(".prev-btn");
         const nextBtn = document.querySelector(".next-btn");
@@ -300,7 +295,7 @@ function Map() {
         if (prevBtn && slides.length > 1) {
           prevBtn.addEventListener("click", showPrevSlide);
         }
-        // Center the popup on the screen
+
         const popup = layer.getPopup();
         if (popup) {
           popup.once("open", () => {
@@ -315,7 +310,6 @@ function Map() {
           });
         }
 
-        // Ensure to remove event listeners when popup closes to prevent memory leaks
         layer.on("popupclose", () => {
           if (prevBtn) {
             prevBtn.removeEventListener("click", showPrevSlide);
@@ -329,184 +323,48 @@ function Map() {
     [handleLayerClick]
   );
 
-  // Add fetchExistingData function
-  const fetchExistingData = useCallback(async () => {
-    try {
-      const response = await fetch(
-        "https://localhost:5003/api/animals/get/all"
-      );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const animals = await response.json();
-      animals.forEach((animal) => {
-        const marker = L.marker([animal.latitude, animal.longitude], {
-          icon: customMarkerIcons[animal.type] || customMarkerIcons.default,
-        });
-        marker.info = JSON.stringify(animal);
-        bindPopupToLayer(marker, marker.info);
-        featureGroupRef.current.addLayer(marker);
-
-        const areaLayer = L.circle([animal.latitude, animal.longitude], {
-          radius: animal.radius,
-          color: animal.color,
-          fillColor: animal.color,
-          fillOpacity: 0.2,
-          weight: 2,
-        });
-        featureGroupRef.current.addLayer(areaLayer);
-        setMapLayers((prev) => [...prev, marker, areaLayer]);
-      });
-    } catch (error) {
-      console.error("Error fetching existing data:", error);
-    }
-  }, [bindPopupToLayer, featureGroupRef, setMapLayers]);
-
-  // Call fetchExistingData in useEffect
   useEffect(() => {
-    if (map) {
-      fetchExistingData();
-    }
-  }, [map, fetchExistingData]);
+    if (!map || !featureGroupRef.current) return;
 
-  // Modify handleDialogSubmit to include POST request
-  // const handleDialogSubmit = async ({
-  //   info,
-  //   markerType,
-  //   sightings,
-  //   images,
-  //   videos,
-  // }) => {
-  //   if (addingAnimal && sightings?.length >= 3) {
-  //     try {
-  //       const animalData = JSON.parse(info);
-  //       animalData.images = images;
-  //       animalData.videos = videos;
-  //       const validSightings = filterSightingsWithinRange(
-  //         sightings,
-  //         animalData.type
-  //       );
+    featureGroupRef.current.clearLayers();
 
-  //       if (validSightings.length < 3) {
-  //         alert(
-  //           "Some sightings were too far apart for this type of animal. Please add sightings closer together."
-  //         );
-  //         return;
-  //       }
+    animals.forEach((animal) => {
+      const validRadius = Number.isFinite(animal.radius) ? animal.radius : 1000;
 
-  //       const centerPoint = calculateCenter(validSightings);
-  //       if (centerPoint) {
-  //         const circleColor = getRandomColor();
-  //         const areaLayer = L.circle([centerPoint.lat, centerPoint.lng], {
-  //           radius: calculateAdjustedRadius(validSightings, animalData.type),
-  //           fillColor: circleColor,
-  //           fillOpacity: 0.2,
-  //           weight: 2,
-  //         });
-  //         featureGroupRef.current.addLayer(areaLayer);
+      const frontendAnimalData = {
+        id: animal.id,
+        type: animal.animal_type,
+        breed: animal.breed || animal.animal_name,
+        color: animal.color,
+        size: animal.size,
+        healthStatus: animal.health_status,
+        incidents: animal.incident,
+        lastSeen: animal.last_seen,
+        images: [],
+        videos: [],
+      };
 
-  //         let animalMarkerIcon = customMarkerIcons.default;
-  //         switch (animalData.type) {
-  //           case "dog":
-  //             animalMarkerIcon = customMarkerIcons.dog;
-  //             break;
-  //           case "cat":
-  //             animalMarkerIcon = customMarkerIcons.cat;
-  //             break;
-  //           case "other":
-  //           default:
-  //             animalMarkerIcon = customMarkerIcons.other;
-  //             break;
-  //         }
+      const marker = L.marker([animal.latitude, animal.longitude], {
+        icon:
+          customMarkerIcons[animal.animal_type] || customMarkerIcons.default,
+      });
 
-  //         const marker = L.marker([centerPoint.lat, centerPoint.lng], {
-  //           icon: animalMarkerIcon,
-  //         });
-  //         marker.info = JSON.stringify(animalData);
-  //         bindPopupToLayer(marker, marker.info);
-  //         featureGroupRef.current.addLayer(marker);
+      marker.id = animal.id;
+      marker.info = JSON.stringify(frontendAnimalData);
+      bindPopupToLayer(marker, marker.info);
+      featureGroupRef.current.addLayer(marker);
 
-  //         setMapLayers((prevLayers) => [...prevLayers, marker, areaLayer]);
-  //         // Send POST request to server
-  //         try {
-  //           const response = await fetch(
-  //             "https://your-server.com/api/animals",
-  //             {
-  //               method: "POST",
-  //               headers: {
-  //                 "Content-Type": "application/json",
-  //               },
-  //               body: JSON.stringify({
-  //                 latitude: centerPoint.lat,
-  //                 longitude: centerPoint.lng,
-  //                 type: animalData.type,
-  //                 breed: animalData.breed,
-  //                 size: animalData.size,
-  //                 healthStatus: animalData.healthStatus,
-  //                 incidents: animalData.incidents,
-  //                 lastSeen: animalData.lastSeen,
-  //                 images: animalData.images,
-  //                 videos: animalData.videos,
-  //                 radius: calculateAdjustedRadius(
-  //                   validSightings,
-  //                   animalData.type
-  //                 ),
-  //                 color: circleColor,
-  //               }),
-  //             }
-  //           );
-  //           if (!response.ok) {
-  //             throw new Error("Failed to save animal data");
-  //           }
+      const areaLayer = L.circle([animal.latitude, animal.longitude], {
+        radius: validRadius,
+        color: animal.color_code || getRandomColor(),
+        fillColor: animal.color_code || getRandomColor(),
+        fillOpacity: 0.2,
+        weight: 2,
+      });
+      featureGroupRef.current.addLayer(areaLayer);
+    });
+  }, [animals, map, bindPopupToLayer]);
 
-  //           const savedAnimal = await response.json();
-  //           console.log("Animal data saved:", savedAnimal);
-  //         } catch (postError) {
-  //           console.error("Error saving animal data:", postError);
-  //         }
-  //       }
-  //       setShowDialog(false);
-  //     } catch (error) {
-  //       console.error("Error processing animal data:", error);
-  //       alert(
-  //         "There was an error processing the animal data. Please try again."
-  //       );
-  //     }
-  //   } else if (activeLayer) {
-  //     if (activeLayer instanceof L.Marker && !isEdit) {
-  //       activeLayer.setIcon(customMarkerIcons[markerType]);
-  //     }
-  //     activeLayer.info = info;
-  //     bindPopupToLayer(activeLayer, info);
-  //     if (!isEdit) {
-  //       setMapLayers((prevLayers) => [...prevLayers, activeLayer]);
-  //     }
-  //     try {
-  //       const response = await fetch(
-  //         `https://your-server.com/api/animals/${activeLayer.id}`,
-  //         {
-  //           method: "PUT",
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //           },
-  //           body: info,
-  //         }
-  //       );
-
-  //       if (!response.ok) {
-  //         throw new Error("Failed to update animal data");
-  //       }
-
-  //       const updatedAnimal = await response.json();
-  //       console.log("Animal data updated:", updatedAnimal);
-  //     } catch (updateError) {
-  //       console.error("Error updating animal data:", updateError);
-  //     }
-  //     setShowDialog(false);
-  //   }
-  //   setAddingAnimal(false);
-  //   setTemporarySightings([]);
-  // };
   const handleDialogSubmit = async ({
     info,
     markerType,
@@ -517,8 +375,6 @@ function Map() {
     if (addingAnimal && sightings?.length >= 3) {
       try {
         const animalData = JSON.parse(info);
-        animalData.images = images;
-        animalData.videos = videos;
         const validSightings = filterSightingsWithinRange(
           sightings,
           animalData.type
@@ -533,43 +389,50 @@ function Map() {
 
         const centerPoint = calculateCenter(validSightings);
         if (centerPoint) {
-          // const circleColor = getRandomColor();
-          // const radius = calculateAdjustedRadius(
-          //   validSightings,
-          //   animalData.type
-          // );
+          const circleColor = getRandomColor();
+          const radius = calculateAdjustedRadius(
+            validSightings,
+            animalData.type
+          );
+
           const postData = {
-            animalName: animalData.breed || "Unknown", // Map breed to animalName
-            animalType: animalData.type || "other",
-            incident: animalData.incidents || "No Incident!",
-            healthStatus: animalData.healthStatus || "Unknown",
+            animalName: animalData.breed || "Unknown",
+            animalType: animalData.type,
+            breed: animalData.breed,
+            color: animalData.color,
+            size: animalData.size,
+            healthStatus: animalData.healthStatus,
+            incident: animalData.incidents || "",
+            lastSeen: animalData.lastSeen,
             latitude: centerPoint.lat,
             longitude: centerPoint.lng,
-            // Add any other required fields from your sample
+            radius: radius,
+            colorCode: circleColor,
           };
-          const newAnimal = await createAnimal(postData);
-          console.log("New animal data:", newAnimal);
-          // const newAnimal = await createAnimal({
-          //   latitude: centerPoint.lat,
-          //   longitude: centerPoint.lng,
-          //   type: animalData.type,
-          //   breed: animalData.breed,
-          //   size: animalData.size,
-          //   healthStatus: animalData.healthStatus,
-          //   incidents: animalData.incidents,
-          //   lastSeen: animalData.lastSeen,
-          //   images: animalData.images,
-          //   videos: animalData.videos,
-          //   radius: radius,
-          //   color: circleColor,
-          // });
 
-          const animalMarkerIcon =
-            customMarkerIcons[newAnimal.type] || customMarkerIcons.default;
+          const newAnimal = await createAnimal(postData);
+
           const marker = L.marker([newAnimal.latitude, newAnimal.longitude], {
-            icon: animalMarkerIcon,
+            icon:
+              customMarkerIcons[newAnimal.animal_type] ||
+              customMarkerIcons.default,
           });
-          marker.info = JSON.stringify(newAnimal);
+
+          const frontendAnimalData = {
+            id: newAnimal.id,
+            type: newAnimal.animal_type,
+            breed: newAnimal.breed,
+            color: newAnimal.color,
+            size: newAnimal.size,
+            healthStatus: newAnimal.health_status,
+            incidents: newAnimal.incident,
+            lastSeen: newAnimal.last_seen,
+            images: images || [],
+            videos: videos || [],
+          };
+
+          marker.id = newAnimal.id;
+          marker.info = JSON.stringify(frontendAnimalData);
           bindPopupToLayer(marker, marker.info);
           featureGroupRef.current.addLayer(marker);
 
@@ -577,8 +440,8 @@ function Map() {
             [newAnimal.latitude, newAnimal.longitude],
             {
               radius: newAnimal.radius,
-              color: newAnimal.color,
-              fillColor: newAnimal.color,
+              color: newAnimal.color_code,
+              fillColor: newAnimal.color_code,
               fillOpacity: 0.2,
               weight: 2,
             }
@@ -593,20 +456,37 @@ function Map() {
         );
       }
     } else if (activeLayer) {
-      if (activeLayer instanceof L.Marker && !isEdit) {
-        activeLayer.setIcon(customMarkerIcons[markerType]);
-      }
-      activeLayer.info = info;
-      bindPopupToLayer(activeLayer, info);
-      if (!isEdit) {
+      try {
         const updatedData = JSON.parse(info);
-        await updateAnimal(activeLayer.id, updatedData);
+        const updatePayload = {
+          animalType: updatedData.type,
+          breed: updatedData.breed,
+          color: updatedData.color,
+          size: updatedData.size,
+          healthStatus: updatedData.healthStatus,
+          incident: updatedData.incidents,
+          lastSeen: updatedData.lastSeen,
+        };
+
+        await updateAnimal(activeLayer.id, updatePayload);
+
+        if (activeLayer instanceof L.Marker) {
+          activeLayer.setIcon(
+            customMarkerIcons[updatedData.type] || customMarkerIcons.default
+          );
+        }
+        activeLayer.info = info;
+        bindPopupToLayer(activeLayer, info);
+      } catch (error) {
+        console.error("Error updating animal:", error);
+        alert("Failed to update animal information. Please try again.");
       }
       setShowDialog(false);
     }
     setAddingAnimal(false);
     setTemporarySightings([]);
   };
+
   useEffect(() => {
     if (map && addingAnimal && !editingSighting) {
       const handleMapClick = (e) => {
@@ -616,12 +496,10 @@ function Map() {
           date: new Date().toISOString().split("T")[0],
         };
 
-        // Get the current animal type from the dialog
         const currentAnimalType = JSON.parse(
           activeLayer?.info || '{"type":"other"}'
         ).type;
 
-        // Check if the new sighting is within range of existing sightings
         if (
           temporarySightings.length > 0 &&
           !isWithinRange(newSighting, temporarySightings, currentAnimalType)
@@ -700,33 +578,7 @@ function Map() {
     const distance = calculateDistance(center, newSighting);
     return distance <= maxRange;
   };
-  // Modify the animal mapping in the useEffect
-  useEffect(() => {
-    if (!map || !featureGroupRef.current) return;
 
-    featureGroupRef.current.clearLayers();
-
-    animals.forEach((animal) => {
-      // Add validation for radius
-      const validRadius = Number.isFinite(animal.radius) ? animal.radius : 1000; // Default 1000 meters
-
-      const marker = L.marker([animal.latitude, animal.longitude], {
-        icon: customMarkerIcons[animal.type] || customMarkerIcons.default,
-      });
-
-      const areaLayer = L.circle([animal.latitude, animal.longitude], {
-        radius: validRadius, // Use validated radius
-        color: animal.color,
-        fillColor: animal.color,
-        fillOpacity: 0.2,
-        weight: 2,
-      });
-
-      featureGroupRef.current.addLayer(marker);
-      featureGroupRef.current.addLayer(areaLayer);
-    });
-  }, [animals, map, bindPopupToLayer]);
-  // Update the geolocation useEffect to handle permissions better
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -737,17 +589,16 @@ function Map() {
         },
         (error) => {
           console.error("Error getting geolocation:", error);
-          // Set default coordinates to a valid location (e.g., New York)
           setLatitude(40.7128);
           setLongitude(-74.006);
         }
       );
     } else {
-      // Fallback for unsupported browsers
       setLatitude(40.7128);
       setLongitude(-74.006);
     }
   }, []);
+
   const handleStepChange = (step) => {
     if (step === 3) {
       setAddingAnimal(true);
@@ -793,8 +644,8 @@ function Map() {
       <MapContainer
         center={[latitude, longitude]}
         maxBounds={[
-          [-90, -180], // Southwest corner of the bounding box
-          [90, 180], // Northeast corner of the bounding box
+          [-90, -180],
+          [90, 180],
         ]}
         zoom={15}
         minZoom={2}
@@ -843,7 +694,7 @@ function Map() {
           initialInfo={activeLayer?.info || ""}
           isEdit={isEdit}
           sightings={temporarySightings}
-          onStepChange={handleStepChange} // Added this line
+          onStepChange={handleStepChange}
         />
       )}
     </div>
